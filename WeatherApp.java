@@ -16,7 +16,7 @@ public class WeatherApp {
             String weatherData = fetchWeatherData(city, apiKey);
             double temperature = extractTemperature(weatherData);
 
-            System.out.println("Temperature in " + city + ": " + temperature + "°C");
+            System.out.println("Temperature in " + city + ": " + temperature + "°F");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -43,10 +43,13 @@ public class WeatherApp {
     private static double extractTemperature(String weatherData) {
         try {
             JSONObject json = new JSONObject(weatherData);
+            System.out.println(json);
             JSONObject main = json.getJSONObject("main");
-            double temperature = main.getDouble("temp");
+            double temperatureK = main.getDouble("temp");
     
-            return temperature;
+            double temperatureF = (temperatureK - 273.15) * 9/5 + 32;
+
+            return temperatureF;
         } catch (JSONException e) {
             e.printStackTrace();
             return 0.0; // Return a default value or handle the error case as needed

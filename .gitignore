@@ -1,2 +1,64 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
 
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv/
+env.bak/
+env/ 
+
+# Distribution / Packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+lib/
+bin/
+lib64/
+parts/
+sdist/
+share/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Pytest
+.cache/
+*.cover
+coverage.xml
+*.coveragerc
+*.pytest_cache/
+*.test
+pyvenv.cfg
+
+# IDEs and Editors
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Heroku specific
+*.log
+*.sqlite3
+*.db
 .DS_Store
+*.pyc
+*.pyo
+
+# Miscellaneous
+*.tgz
+*.zip
+*.rar
+*.tar.gz
+*.csv

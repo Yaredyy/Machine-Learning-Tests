@@ -1,6 +1,5 @@
 from sklearn.linear_model import LinearRegression
 from sklearn.datasets import fetch_california_housing
-from tensorflow import 
 
 
 housing = fetch_california_housing()

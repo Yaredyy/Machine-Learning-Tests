@@ -4,3 +4,5 @@ tensorflow
 matplotlib
 seaborn
 flask
+
+#might have to update your tensor protobuf using: pip install --upgrade tensorflow protobuf

@@ -13,7 +13,7 @@ Y=ds.diagnosis.replace({'M': 0, 'B': 1})
 
 X_train, X_test, Y_train, Y_test = splitter(X, Y, test_size=0.35, random_state=42)
 
-array = []
+temp = []
 
 for i in range(21):
     if(i>18):
@@ -41,9 +41,18 @@ for i in range(21):
             incorrect=incorrect+1
         
         j = j+1
-    
-    array.append(f"Split:{i+1} Correct: {correct} | Incorrect: {incorrect} | Accuracy: {(correct/(correct+incorrect)):.3f} | Split:{.05*(i+1)}")
-print(array)
+
+    temp.append({
+        "Split": i,
+        "Correct": correct,
+        "Incorrect": incorrect,
+        "Accuracy": (correct/(correct+incorrect)),
+        "test_size":(.05*(i+1))
+        })
 
 
+df = pd.DataFrame(temp)
+print(df)
+
+df.to_csv("sklearning/BreastCancerLinearResult.csv")
     

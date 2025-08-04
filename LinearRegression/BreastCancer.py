@@ -1,6 +1,5 @@
 from sklearn.linear_model import LinearRegression as LR
 import pandas as pd
-import random
 from sklearn.model_selection import train_test_split as splitter
 
 ds = pd.read_csv("LinearRegression/Breast_cancer_dataset.csv")

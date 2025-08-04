@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 
-probability_model = tf.keras.models.load_model('LinearRegression\pm.keras')
+probability_model = tf.keras.models.load_model('Tensor\pm.keras')
 
 fashion_mnist = tf.keras.datasets.fashion_mnist
 (train_images, train_labels), (test_images, test_labels) = fashion_mnist.load_data()

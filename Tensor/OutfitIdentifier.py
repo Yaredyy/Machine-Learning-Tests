@@ -28,4 +28,4 @@ print('\nTest accuracy:', test_acc)
 
 probability_model = tf.keras.Sequential([model, tf.keras.layers.Softmax()])
 
-probability_model.save('LinearRegression\pm.keras')
+probability_model.save('Tensor\pm.keras')

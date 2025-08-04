@@ -14,15 +14,15 @@ for i in housing:
 # print(housing)
 
 x1=housing.__getitem__('data')
-print(x1)
+# print(x1)
 y=housing.__getitem__('target')
-print(y)
+# print(y)
 
 x=x1[:,[0]]
-print(x)
+# print(x)
 
-# model=LinearRegression()
-# model.fit(x,y)
+model=LinearRegression()
+model.fit(x,y)
 
-# print(model.predict([[0],[1],[5],[10],[25],[50],[75],[100]]))
+print(model.predict([[0],[1],[5],[10],[25],[50],[75],[100]]))
 

@@ -3,6 +3,7 @@ from sklearn.model_selection import train_test_split as split
 import tensorflow as tf
 from sklearn.preprocessing import MinMaxScaler
 import numpy as np
+import joblib
 
 
 baseFolder=input("Input Base folder: ")
@@ -152,3 +153,4 @@ if best_model is not None:
     print("Saved best model as Best_ufc_model.h5")
 
 df.to_csv(baseFolder+"/SessionSummary.csv")
+joblib.dump(scaler, baseFolder + "/scaler.save")

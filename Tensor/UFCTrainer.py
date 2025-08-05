@@ -4,20 +4,6 @@ import tensorflow as tf
 from sklearn.preprocessing import MinMaxScaler
 import numpy as np
 
-# Modle one with:
-#model = tf.keras.Sequential([
-#        tf.keras.layers.Dense(110, activation='relu'),
-#        tf.keras.layers.Dense(2),
-#    ])
-# Had maximum Accuracy is 0.6614597360624832 for spliter at index 11 of split .6
-
-#New layers with old data had:
-#Maximum Accuracy is 0.6541879881497441 for spliter at index 11 of split .6
-
-
-#with cleaner data, new model has:
-#
-
 
 baseFolder=input("Input Base folder: ")
 baseFolder="Tensor/Models/"+baseFolder
@@ -32,9 +18,11 @@ Y=df['Winner']
 
 
 # Drop non-relevant columns
-X = df.drop(columns=['Winner', 'RedFighter', 'BlueFighter', 'Date', 'Location', 'Country', 'Finish', 'FinishDetails'])
 X = df.drop(columns=[
     # Raw stats if keeping differences
+    'Winner', 'RedFighter', 'BlueFighter',
+    'Date', 'Location', 'Country',
+    'Finish', 'FinishDetails',
     'RedAge', 'BlueAge',
     'RedHeightCms', 'BlueHeightCms',
     'RedReachCms', 'BlueReachCms',
@@ -81,16 +69,6 @@ X.fillna(0, inplace=True)
 # Normalize between 0 and 1
 scaler = MinMaxScaler()
 X_scaled = scaler.fit_transform(X)
-
-# pd.set_option('display.max_columns', None)
-# print(df)
-# print(Y)
-# print("--------------------------------------------------------")
-# print(X.columns)
-# print(X.head(1))
-# print("--------------------------------------------------------")
-# print(df.columns)
-# print(df.head(1))
 
 
 

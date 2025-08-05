@@ -64,3 +64,4 @@ pyvenv.cfg
 *.csv
 *.keras
 *.h5
+*.save

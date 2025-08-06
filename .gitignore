@@ -62,4 +62,5 @@ pyvenv.cfg
 *.tar.gz
 *.keras
 *.h5
+*.csv
 *.save

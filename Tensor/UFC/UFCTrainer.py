@@ -7,7 +7,7 @@ import joblib
 
 
 baseFolder=input("Input Base folder: ")
-baseFolder="Tensor/UFC/Models"+baseFolder
+baseFolder="Tensor/UFC/Models/"+baseFolder
 
 # Load the dataset
 df = pd.read_csv('Tensor/UFC/ufc-master.csv')

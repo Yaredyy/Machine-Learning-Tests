@@ -7,7 +7,7 @@ import joblib
 
 
 baseFolder=input("Input Base folder: ")
-baseFolder="Tensor\UFC\Models"+baseFolder
+baseFolder="Tensor/UFC/Models"+baseFolder
 
 # Load the dataset
 df = pd.read_csv('Tensor/UFC/ufc-master.csv')
@@ -21,7 +21,7 @@ Y=df['Winner']
 # Drop non-relevant columns
 X = df.drop(columns=[
     # Raw stats if keeping differences
-    'Winner', 'RedFighter', 'BlueFighter',
+    'Winner',
     'Date', 'Location', 'Country',
     'Finish', 'FinishDetails',
     'RedAge', 'BlueAge',

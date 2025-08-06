@@ -1,19 +1,14 @@
-from sklearn.linear_model import LinearRegression as LR
+from sklearn.linear_model import LogisticRegression as LR
 import pandas as pd
 from sklearn.model_selection import train_test_split as splitter
 
-#split .6 has the best results, from my outputs
+#.1 split has the best results, from my outputs
 
-
-ds = pd.read_csv("sklearning\Breast_cancer_dataset.csv")
+ds = pd.read_csv("sklearning\BreastCancer\Breast_cancer_dataset.csv")
 
 X = ds[["radius_mean", "texture_mean", "symmetry_worst", "fractal_dimension_worst"]].values
 
 Y=ds.diagnosis.replace({'M': 0, 'B': 1})
-
-X_train, X_test, Y_train, Y_test = splitter(X, Y, test_size=0.35, random_state=42)
-
-temp = []
 
 for i in range(21):
     if(i>18):
@@ -41,18 +36,8 @@ for i in range(21):
             incorrect=incorrect+1
         
         j = j+1
-
-    temp.append({
-        "Split": i,
-        "Correct": correct,
-        "Incorrect": incorrect,
-        "Accuracy": (correct/(correct+incorrect)),
-        "test_size":(.05*(i+1))
-        })
+    
+    print(f"Split:{i+1} Correct: {correct} | Incorrect: {incorrect} | Accuracy: {(correct/(correct+incorrect)):.3f} | Split:{.05*(i+1)}")
 
 
-df = pd.DataFrame(temp)
-print(df)
-
-df.to_csv("sklearning/BreastCancerLinearResult.csv")
     

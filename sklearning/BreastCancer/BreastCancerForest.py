@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split as splitter
 
 
 
-ds = pd.read_csv("sklearning\Breast_cancer_dataset.csv")
+ds = pd.read_csv("sklearning\BreastCancer\Breast_cancer_dataset.csv")
 
 X = ds[["radius_mean", "texture_mean", "symmetry_worst", "fractal_dimension_worst"]].values
 

@@ -7,10 +7,10 @@ import joblib
 
 
 baseFolder=input("Input Base folder: ")
-baseFolder="Tensor/Models/"+baseFolder
+baseFolder="Tensor\UFC\Models"+baseFolder
 
 # Load the dataset
-df = pd.read_csv('Tensor/ufc-master.csv')
+df = pd.read_csv('Tensor/UFC/ufc-master.csv')
 
 # Convert Winner column to binary
 df['Winner'] = df['Winner'].apply(lambda x: 1 if x == 'Red' else 0)

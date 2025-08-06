@@ -33,7 +33,7 @@ def get_user_input():
 
 def main():
     # Load model and scaler (paths must match your upload files)
-    model = tf.keras.models.load_model('Tensor\perfect_ufc_model.h5')
+    model = tf.keras.models.load_model('Tensor/UFC/perfect_ufc_model.h5')
     scaler = joblib.load('Tensor\scaler.save')
 
     user_input = get_user_input()

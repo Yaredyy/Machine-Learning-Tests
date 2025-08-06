@@ -58,10 +58,8 @@ pyvenv.cfg
 
 # Miscellaneous
 *.tgz
-*.zip
 *.rar
 *.tar.gz
-*.csv
 *.keras
 *.h5
 *.save

@@ -7,71 +7,28 @@ import joblib
 
 
 baseFolder=input("Input Base folder: ")
-baseFolder="Tensor/UFC/Models/"+baseFolder
+baseFolder="Tensor/PreDiabetes/Models/"+baseFolder
 
 # Load the dataset
-df = pd.read_csv('Tensor/UFC/ufc-master.csv')
+df = pd.read_csv('Tensor/PreDiabetes/Prediabetes.csv')
 
-# Convert Winner column to binary
-df['Winner'] = df['Winner'].apply(lambda x: 1 if x == 'Red' else 0)
 
-Y=df['Winner']
+
+Y=df['diabetes']
 
 
 # Drop non-relevant columns
 X = df.drop(columns=[
-    # Raw stats if keeping differences
-    'Winner',
-    'Date', 'Location', 'Country',
-    'Finish', 'FinishDetails',
-    'RedAge', 'BlueAge',
-    'RedHeightCms', 'BlueHeightCms',
-    'RedReachCms', 'BlueReachCms',
-    'RedCurrentWinStreak', 'BlueCurrentWinStreak',
-    'RedCurrentLoseStreak', 'BlueCurrentLoseStreak',
-    'RedAvgSigStrLanded', 'BlueAvgSigStrLanded',
-    'RedAvgSigStrPct', 'BlueAvgSigStrPct',
-    'RedAvgSubAtt', 'BlueAvgSubAtt',
-    'RedAvgTDLanded', 'BlueAvgTDLanded',
-    'RedAvgTDPct', 'BlueAvgTDPct',
-
-    # Odds / Expected Value
-    'RedOdds', 'BlueOdds',
-    'RedExpectedValue', 'BlueExpectedValue',
-    'RedDecOdds', 'BlueDecOdds',
-    'RKOOdds', 'BKOOdds',
-    'RSubOdds', 'BSubOdds',
-
-    # Post-fight outcome info
-    'FinishRound', 'FinishRoundTime',
-    'TotalFightTimeSecs',
-
-    # Rankings
-    'RPFPRank', 'BPFPRank', 'BetterRank',
-    'RWFlyweightRank', 'RWFeatherweightRank',
-    'RWBantamweightRank', 'RHeavyweightRank',
-    'RLightHeavyweightRank', 'RMiddleweightRank',
-    'RWelterweightRank', 'RLightweightRank',
-    'RFeatherweightRank', 'RBantamweightRank',
-    'RFlyweightRank', 'BWFeatherweightRank',
-    'BWStrawweightRank', 'BWBantamweightRank',
-    'BHeavyweightRank', 'BLightHeavyweightRank',
-    'BMiddleweightRank', 'BWelterweightRank',
-    'BLightweightRank', 'BFeatherweightRank',
-    'BBantamweightRank', 'BFlyweightRank',
-
-    # Ambiguous
-    'EmptyArena', 'BMatchWCRank', 'RMatchWCRank'
+'diabetes'
 ])
 
 X = X.apply(pd.to_numeric, errors='coerce').astype('float32')
-X.fillna(0, inplace=True)
 
 # Normalize between 0 and 1
 scaler = MinMaxScaler()
 X_scaled = scaler.fit_transform(X)
 
-
+size = int(X_scaled.shape[1])
 
 temp = []
 best_accuracy = 0
@@ -81,17 +38,17 @@ for j in range(19):  # 0 to 18 splits
     test_size = 0.05 * (j + 1)
     X_train, X_test, Y_train, Y_test = split(X_scaled, Y, test_size=test_size, random_state=42)
 
+
     model = tf.keras.Sequential([
-        tf.keras.layers.Input(shape=(X_scaled.shape[1],)),
-        tf.keras.layers.Dense(128, activation='relu'),
+        tf.keras.layers.Input(shape=(size,)),
+        tf.keras.layers.Dense(size, activation='relu'),
         tf.keras.layers.BatchNormalization(),
         tf.keras.layers.Dropout(0.3),
 
-        tf.keras.layers.Dense(64, activation='relu'),
+        tf.keras.layers.Dense(int(np.floor(size/2)), activation='relu'),
         tf.keras.layers.BatchNormalization(),
-        tf.keras.layers.Dropout(0.3),
 
-        tf.keras.layers.Dense(32, activation='relu'),
+        tf.keras.layers.Dense(int(np.floor(size/4)), activation='relu'),
         tf.keras.layers.Dense(2, activation='softmax')
     ])
 
@@ -122,6 +79,7 @@ for j in range(19):  # 0 to 18 splits
               f"(Conf: {confidence:.2f}) | Actual = {'Red' if actual == 1 else 'Blue'} → {result}")
 
     accuracy = correct / (correct + incorrect)
+    print(f"Split:{j+1} Correct: {correct} | Incorrect: {incorrect} | Accuracy: {(correct/(correct+incorrect)):.2f}% | Split:{.05*(j+1)}")
     temp.append({
         "Split": j + 1,
         "Correct": correct,

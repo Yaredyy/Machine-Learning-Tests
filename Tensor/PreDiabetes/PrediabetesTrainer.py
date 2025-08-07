@@ -17,10 +17,8 @@ df = pd.read_csv('Tensor/PreDiabetes/Prediabetes.csv')
 Y=df['diabetes']
 
 
-# Drop non-relevant columns
-X = df.drop(columns=[
-'diabetes'
-])
+#Drop non-relevant columns
+X = df.drop(columns=['diabetes'])
 
 X = X.apply(pd.to_numeric, errors='coerce').astype('float32')
 
@@ -28,7 +26,7 @@ X = X.apply(pd.to_numeric, errors='coerce').astype('float32')
 scaler = MinMaxScaler()
 X_scaled = scaler.fit_transform(X)
 
-size = int(X_scaled.shape[1])
+size = X_scaled.shape[1]
 
 temp = []
 best_accuracy = 0
@@ -75,11 +73,11 @@ for j in range(19):  # 0 to 18 splits
         confidence = probs[i][predicted]
 
         result = "✅ Correct" if predicted == actual else "❌ Wrong"
-        print(f"Fight {i+1}: Predicted = {'Red' if predicted == 1 else 'Blue'} "
-              f"(Conf: {confidence:.2f}) | Actual = {'Red' if actual == 1 else 'Blue'} → {result}")
+        print(f"Fight {i+1}: Predicted = {'Diabetes' if predicted == 1 else 'No Diabetes'} "
+              f"(Conf: {confidence:.2f}) | Actual = {'Diabetes' if actual == 1 else 'No Diabetes'} → {result}")
 
     accuracy = correct / (correct + incorrect)
-    print(f"Split:{j+1} Correct: {correct} | Incorrect: {incorrect} | Accuracy: {(correct/(correct+incorrect)):.2f}% | Split:{.05*(j+1)}")
+    print(f"Split:{j+1} Correct: {correct} | Incorrect: {incorrect} | Accuracy: {(correct/(correct+incorrect)):.4f}% | Split:{test_size}")
     temp.append({
         "Split": j + 1,
         "Correct": correct,
@@ -87,7 +85,7 @@ for j in range(19):  # 0 to 18 splits
         "Accuracy": accuracy,
         "test_size": test_size
     })
-
+    
     if accuracy == 1.0:
         perfect_filename = baseFolder+f"/Perfects/perfect_ufc_model_{j + 1}.h5"
         model.save(perfect_filename)
@@ -99,15 +97,15 @@ for j in range(19):  # 0 to 18 splits
         best_split = j + 1
         
 
-df = pd.DataFrame(temp)
-print(df)
-max_accuracy = df['Accuracy'].max()
-spliter_index = df['Accuracy'].idxmax()
-print(f"Maximum Accuracy is {max_accuracy} for spliter at index {spliter_index} of split {(.05*(spliter_index+1))}")
+out = pd.DataFrame(temp)
+print(out)
+
+spliter_index = out['Accuracy'].idxmax()
+print(f"Maximum Accuracy is {out['Accuracy'][spliter_index]} for spliter at index {spliter_index} of split {(.05*(spliter_index+1))}")
 
 if best_model is not None:
     best_model.save(baseFolder+"/Best_ufc_model.h5")
     print("Saved best model as Best_ufc_model.h5")
 
-df.to_csv(baseFolder+"/SessionSummary.csv")
+out.to_csv(baseFolder+"/SessionSummary.csv")
 joblib.dump(scaler, baseFolder + "/scaler.save")

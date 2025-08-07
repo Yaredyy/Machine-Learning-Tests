@@ -32,10 +32,25 @@ temp = []
 best_accuracy = 0
 best_model = None
 
-for j in range(19):  # 0 to 18 splits
+for j in range(19): 
     test_size = 0.05 * (j + 1)
     X_train, X_test, Y_train, Y_test = split(X_scaled, Y, test_size=test_size, random_state=42)
 
+    checkpoint_path = f"{baseFolder}/Splits/temp_best_model_split_{j+1}.keras"
+    checkpoint = tf.keras.callbacks.ModelCheckpoint(
+        checkpoint_path,
+        monitor='val_accuracy',
+        save_best_only=True,
+        save_weights_only=False,
+        mode='max',
+        verbose=0,
+    )
+    early_stop = tf.keras.callbacks.EarlyStopping(
+        monitor='val_accuracy',
+        patience=2,
+        mode='max',
+        restore_best_weights=True
+    )
 
     model = tf.keras.Sequential([
         tf.keras.layers.Input(shape=(size,)),
@@ -56,9 +71,10 @@ for j in range(19):  # 0 to 18 splits
         metrics=['accuracy']
     )
 
-    model.fit(X_train, Y_train, epochs=10, verbose=0)
-
-    predictions = model.predict(X_test)
+    model.fit(X_train, Y_train, epochs=10, validation_data=(X_test, Y_test), verbose=0, callbacks=[checkpoint,early_stop])
+    best_epoch_model = tf.keras.models.load_model(checkpoint_path)
+    
+    predictions = best_epoch_model.predict(X_test)
     probs = predictions
     predicted_classes = np.argmax(probs, axis=1)
 
@@ -85,11 +101,6 @@ for j in range(19):  # 0 to 18 splits
         "Accuracy": accuracy,
         "test_size": test_size
     })
-    
-    if accuracy == 1.0:
-        perfect_filename = baseFolder+f"/Perfects/perfect_ufc_model_{j + 1}.h5"
-        model.save(perfect_filename)
-        print(f"Saved perfect model for split {j + 1} as {perfect_filename}")
 
     if accuracy >= best_accuracy:
         best_accuracy = accuracy
@@ -104,8 +115,8 @@ spliter_index = out['Accuracy'].idxmax()
 print(f"Maximum Accuracy is {out['Accuracy'][spliter_index]} for spliter at index {spliter_index} of split {(.05*(spliter_index+1))}")
 
 if best_model is not None:
-    best_model.save(baseFolder+"/Best_ufc_model.h5")
-    print("Saved best model as Best_ufc_model.h5")
+    best_model.save(baseFolder+"/Best_ufc_model.keras")
+    print("Saved best model as Best_ufc_model.keras")
 
 out.to_csv(baseFolder+"/SessionSummary.csv")
 joblib.dump(scaler, baseFolder + "/scaler.save")

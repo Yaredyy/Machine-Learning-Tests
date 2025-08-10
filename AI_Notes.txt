@@ -1,0 +1,146 @@
+**imports:
+    import pandas as pd
+    import numpy as np
+    import tensorflow as tf
+    from sklearn.model_selection import train_test_split as splitter
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.linear_model import LinearRegression
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.svm import SVC
+    from sklearn.datasets import ...
+    from sklearn.preprocessing import MinMaxScaler
+
+    import seaborn as sns
+    import matplotlib.pyplot as plt
+    import joblib
+
+
+
+**we can see the correlation between certain columns(16 columns per heatmap)
+example code #data is held in variable ds
+    temp=pd.DataFrame()
+    j=0
+    for i in ds.columns:
+        if i=='diagnosis':
+            continue
+        temp[f"{i}"]=ds[f"{i}"].values
+        j += 1
+        if (j==15 or i==ds.columns[ds.shape[1]-2])
+            temp['diagnosis']=ds['diagnosis'].values
+            sns.heatmap(temp.corr())
+            plt.show()
+            j=0
+            temp=pd.DataFrame()
+
+
+
+store dataframe into variable(remember the .values!!!!):
+X = ds[['id', 'diagnosis', 'radius_mean']].values
+
+
+**to see the size/shape and if any columns have NaN use:
+    print(ds.isnull().sum())
+    print(ds.shape)
+
+
+**To remove NaN use:
+    X.fillna(0, inplace=True)
+
+
+**and to change into float use:
+    X = X.apply(pd.to_numeric, errors='coerce').astype('float32')
+
+**also scale between 1-0 #also saving it for testing/implementing:
+    scaler = MinMaxScaler()
+    X_scaled = scaler.fit_transform(X)
+    joblib.dump(scaler, baseFolder + "/scaler.save") using (import joblib)
+    scaled_input = scaler.transform(user_input)
+
+**you can also replace values in a column using:
+    ds.diagnosis=ds.diagnosis.replace({'M': 0, 'B': 1})
+    df['Winner'] = df['Winner'].apply(lambda x: 1 if x == 'Red' else 0)
+
+
+**to create dataframes:
+    pd.DataFrame()
+    pd.read_csv()
+    #saving is pd.to_csv(path(../../output.csv))
+
+**create array and turn into dataframe:
+    temp = []
+    temp.append({
+        "Split": i,
+        "Correct": correct,
+        "Incorrect": incorrect,
+        "Accuracy": (correct/(correct+incorrect)),
+        "test_size":(.05*(i+1))
+        })
+    dataframe = pd.dataframe(temp)
+
+**tips for dataframes are:
+max_accuracy = df['Accuracy'].max()
+index_max_accuracy = df['Accuracy'].idxmax()
+X = df.drop(columns=["winner","bet_advantage"])
+correct = np.sum(predicted_classes == Y_test)
+incorrect = len(predicted_classes) - correct
+Y_test = Y_test.reset_index(drop=True) #reset index after dropping rows
+
+
+
+
+**basic image model:
+    model = tf.keras.Sequential([
+        tf.keras.layers.Flatten(input_shape=(28, 28)),
+        tf.keras.layers.Dense(128, activation='relu'),
+        tf.keras.layers.Dense(10),
+    ])
+
+***basic float model(outputs in binary)
+    model = tf.keras.Sequential([
+            tf.keras.layers.Input(shape=(X_scaled.shape[1],)),
+            tf.keras.layers.Dense(128, activation='relu'),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.Dropout(0.3),
+
+            tf.keras.layers.Dense(64, activation='relu'),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.Dropout(0.3),
+
+            tf.keras.layers.Dense(32, activation='relu'),
+            tf.keras.layers.Dense(2, activation='softmax')
+    ])
+
+**custom float model(outputs in binary as well):
+    model = tf.keras.Sequential([
+            tf.keras.layers.Input(shape=(size,)),
+            tf.keras.layers.Dense(size, activation='relu'),
+            tf.keras.layers.BatchNormalization(),
+            tf.keras.layers.Dropout(0.3),
+
+            tf.keras.layers.Dense(int(np.floor(size/2)), activation='relu'),
+            tf.keras.layers.BatchNormalization(),
+
+            tf.keras.layers.Dense(int(np.floor(size/4)), activation='relu'),
+            tf.keras.layers.Dense(2, activation='softmax')
+        ])
+
+
+**how to create checkpoint(best accuracy) and earlystop(after no improvement of):
+    checkpoint_path = f"{baseFolder}/Splits/temp_best_model_split_{j+1}.keras"
+
+    checkpoint = tf.keras.callbacks.ModelCheckpoint(
+        checkpoint_path,
+        monitor='val_accuracy',
+        save_best_only=True,
+        save_weights_only=False,
+        mode='max',
+        verbose=0,
+    )
+    early_stop = tf.keras.callbacks.EarlyStopping(
+        monitor='val_accuracy',
+        patience=2,
+        mode='max',
+        restore_best_weights=True
+    )
+    #attach as such:
+    model.fit(X_train, Y_train, epochs=10, validation_data=(X_test, Y_test), verbose=0, callbacks=[checkpoint,early_stop])

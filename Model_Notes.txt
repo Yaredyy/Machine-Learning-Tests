@@ -11,16 +11,25 @@
 fitting a model with labeled datasets
 X_train, X_test, Y_train, Y_test = splitter(X, Y, test_size=(.05*(i+1)), random_state=42)
 train data/train label -> ml algo -> test data -> response
-logistic regression, decision trees, linear regresion,
-random forest, polynomial regression, k-nearest, naive bayes
-https://www.youtube.com/watch?v=9f-GarcDY58&list=PLEiEAq2VkUULYYgj13YHUWmRePqiu8Ddy&index=5
+
+    ***types of supervised models
+    
+    logistic regression, decision trees, linear regresion,
+    random forest, polynomial regression, k-nearest, naive bayes
+    https://www.youtube.com/watch?v=9f-GarcDY58&list=PLEiEAq2VkUULYYgj13YHUWmRePqiu8Ddy&index=5
+
 
 **Unsupervised learning:
 No labels included
 train data -> ml algo -> test data -> response
-k-means clustering, singular value decomp, apriori
-fuzzy means, hierarchical clustering, parital least squares
-principal component analysis
+
+    ***types of unsupervised models
+    
+    k-means clustering, singular value decomp, apriori
+    fuzzy means, hierarchical clustering, parital least squares
+    principal component analysis
+
+
 
 
 **Reinforcement learning:

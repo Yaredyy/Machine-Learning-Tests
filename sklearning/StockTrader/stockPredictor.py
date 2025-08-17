@@ -2,13 +2,12 @@
 # Predict: Buy, Short, or Hold BTC in the next 3 hours?
 
 import joblib
-import pandas as pd
 import yfinance as yf
 import ta
 
 # Load model
 folder = input("Enter Model Folder: ")
-folder = f"sklearning/BitcoinTrader/{folder}/"
+folder = f"sklearning/StockTrader/{folder}/"
 
 model = joblib.load(folder + "bitcoin_model.pkl")
 features = joblib.load(folder + "model_features.pkl")

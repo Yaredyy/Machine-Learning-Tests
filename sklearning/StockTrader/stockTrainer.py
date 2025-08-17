@@ -9,14 +9,17 @@ import ta
 import joblib
 import os
 
+# Get stock
+symbol = input("Enter Ticker Symbol (e.g., BTC-USD, AAPL): ").upper()
+
 print("📥 Downloading BTC-USD data...")
-data = yf.download("BTC-USD", period="1y", interval="1h")
+data = yf.download(symbol, period="1y", interval="1h")
 if data.empty:
     raise Exception("No data downloaded.")
 
 # Get save folder
 folder = input("Enter Model Folder: ")
-folder = f"sklearning/BitcoinTrader/{folder}/"
+folder = f"sklearning/StockTrader/{symbol}/{folder}/"
 os.makedirs(folder, exist_ok=True)
 
 # Add features

@@ -1,5 +1,5 @@
 # bitcoinTrainer.py
-# Predict: Will BTC price go up in the next 3 hours?
+# Train a model to predict: Will BTC go up in the next 3 hours?
 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report
@@ -8,18 +8,18 @@ import yfinance as yf
 import ta
 import joblib
 
-# --- 1. Download Data ---
 print("📥 Downloading BTC-USD data...")
-data = yf.download("BTC-USD", period="1y", interval="1h")  # 1 year now
+data = yf.download("BTC-USD", period="1y", interval="1h")
 if data.empty:
-    raise Exception("No data downloaded. Check internet or ticker.")
+    raise Exception("No data downloaded.")
 
-fold = input("Enter Model Folder")
-fold = "sklearning/BitcoinTrader/"+fold+"/"
+# Get save folder
+folder = input("Enter Model Folder: ")
+folder = f"sklearning/BitcoinTrader/{folder}/"
 
-# --- 2. Add Features ---
-print("🔧 Adding technical indicators...")
-close = data['Close'].squeeze()  # Fix: Ensure 1D array
+# Add features
+print("🔧 Computing technical indicators...")
+close = data['Close'].squeeze()
 
 data['rsi'] = ta.momentum.RSIIndicator(close).rsi()
 data['macd'] = ta.trend.MACD(close).macd()
@@ -30,41 +30,40 @@ data['volatility'] = data['Close'].rolling(10).std()
 data['ema_12'] = data['Close'].ewm(span=12).mean()
 data['ema_26'] = data['Close'].ewm(span=26).mean()
 
-# --- 3. Target: +3h price move ---
+# Target: price higher in 3 hours?
 data['target'] = (data['Close'].shift(-3) > data['Close']).astype(int)
 
-# --- 4. Drop NaN & Select Features ---
+# Prepare dataset
 data.dropna(inplace=True)
 features = ['rsi', 'macd', 'sma_20', 'sma_50', 'price_change', 'volatility', 'Volume', 'ema_12', 'ema_26']
 X = data[features].values
 Y = data['target'].values
 
-# --- 5. Fixed Time-Based Split (80/20) ---
-split_idx = int(len(X) * 0.8)
+# Time-based split: old → train, new → test
+split_idx = int(0.8 * len(X))
 X_train, X_test = X[:split_idx], X[split_idx:]
 Y_train, Y_test = Y[:split_idx], Y[split_idx:]
 
 print(f"📊 Dataset: {len(X)} samples | Train: {len(X_train)} | Test: {len(X_test)}")
 
-# --- 6. Train Final Model ---
+# Train model
 print("🚀 Training Random Forest model...")
 model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
 model.fit(X_train, Y_train)
 
-# --- 7. Evaluate Properly ---
+# Evaluate
 preds = model.predict(X_test)
 acc = accuracy_score(Y_test, preds)
 print(f"\n🎯 Test Accuracy: {acc:.4f}")
-
 print("\n📝 Classification Report:")
 print(classification_report(Y_test, preds, target_names=['Up', 'Down']))
 
-# --- 8. Save Model & Features ---
-joblib.dump(model, fold+"bitcoin_model.pkl")
-joblib.dump(features, fold+"model_features.pkl")
-print("💾 Model saved: 'bitcoin_model.pkl' and 'model_features.pkl'")
+# Save model
+joblib.dump(model, folder + "bitcoin_model.pkl")
+joblib.dump(features, folder + "model_features.pkl")
+print("💾 Model saved.")
 
-# --- 9. Feature Importance ---
+# Feature importance
 importances = pd.DataFrame({
     'Feature': features,
     'Importance': model.feature_importances_
@@ -72,6 +71,4 @@ importances = pd.DataFrame({
 
 print("\n📈 Top Features:")
 print(importances.head(10))
-
-# Optional: Save to CSV
-importances.to_csv(fold+"feature_importance.csv", index=False)
+importances.to_csv(folder + "feature_importance.csv", index=False)

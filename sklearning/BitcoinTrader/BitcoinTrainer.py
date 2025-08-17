@@ -7,6 +7,7 @@ import pandas as pd
 import yfinance as yf
 import ta
 import joblib
+import os
 
 print("📥 Downloading BTC-USD data...")
 data = yf.download("BTC-USD", period="1y", interval="1h")
@@ -16,6 +17,7 @@ if data.empty:
 # Get save folder
 folder = input("Enter Model Folder: ")
 folder = f"sklearning/BitcoinTrader/{folder}/"
+os.makedirs(folder, exist_ok=True)
 
 # Add features
 print("🔧 Computing technical indicators...")

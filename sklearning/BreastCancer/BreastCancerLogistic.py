@@ -6,28 +6,8 @@ import matplotlib.pyplot as plt
 #.1 split has the best results, from my outputs
 
 ds = pd.read_csv("sklearning/BreastCancer/Breast_cancer_dataset.csv")
-# print(ds.columns)
 ds.diagnosis=ds.diagnosis.replace({'M': 0, 'B': 1})
 
-# temp=pd.DataFrame()
-# j=0
-# for i in ds.columns:
-#     if i=='diagnosis':
-#         continue
-#     temp[f"{i}"]=ds[f"{i}"].values
-#     j += 1
-#     if (j==15 or i==ds.columns[ds.shape[1]-2]):
-#         temp['diagnosis']=ds['diagnosis'].values
-#         sns.heatmap(temp.corr())
-#         plt.show()
-#         j=0
-#         temp=pd.DataFrame()
-    
-    
-
-
-# print(ds.isnull().sum())
-# print(ds.shape)
 
 
 X = ds[['fractal_dimension_mean','texture_se','smoothness_se','symmetry_se','fractal_dimension_se']].values

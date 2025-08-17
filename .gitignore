@@ -65,3 +65,4 @@ pyvenv.cfg
 *.csv
 *.save
 *.pkl
+*.pt

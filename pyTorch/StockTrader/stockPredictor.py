@@ -5,11 +5,17 @@ import torch.nn as nn
 import yfinance as yf
 import ta
 import joblib
-import pandas as pd
 
 # User input
-symbol = input("Enter Ticker Symbol (e.g., BTC-USD, AAPL): ").upper()
-folder_name = input("Enter Model Folder: ")
+import sys
+
+if len(sys.argv) >= 3:
+    symbol = sys.argv[1].upper()
+    folder_name = sys.argv[2]
+else:
+    symbol = input("Enter Ticker Symbol (e.g., BTC-USD, AAPL): ").upper()
+    folder_name = input("Enter Model Folder: ")
+    
 folder = f"pyTorch/StockTrader/{symbol}/{folder_name}/"
 
 # Load features and model
@@ -35,7 +41,7 @@ model.load_state_dict(torch.load(folder + "torch_model.pt"))
 model.eval()
 
 # Download latest data
-print(f"📥 Fetching live {symbol} data...")
+print(f"Fetching live {symbol} data...")
 data = yf.download(symbol, period="5d", interval="1h", auto_adjust=False)
 if data.empty:
     raise Exception("Download failed.")
@@ -55,7 +61,7 @@ data['ema_26'] = data['Close'].ewm(span=26).mean()
 latest = data[features].dropna().tail(1)
 if latest.empty:
     raise Exception("Not enough data to predict.")
-print(f"📊 Using data from: {latest.index[0]}")
+print(f"Using data from: {latest.index[0]}")
 
 # Predict
 input_tensor = torch.tensor(latest.values.astype('float32'))
@@ -66,22 +72,22 @@ with torch.no_grad():
 up_prob, down_prob = probs[1], probs[0]
 
 # Show prediction
-print(f"\n🔮 Prediction Confidence:")
+print(f"\nPrediction Confidence:")
 print(f"   Up (Buy):  {up_prob:.2%}")
 print(f" Down (Short): {down_prob:.2%}")
 
 threshold = 0.58
 
 if up_prob >= threshold:
-    print("✅ STRONG BUY SIGNAL 🟢🔥")
+    print(" STRONG BUY SIGNAL ")
 elif down_prob >= threshold:
-    print("✅ STRONG SHORT SIGNAL 🔴🔥")
+    print(" STRONG SHORT SIGNAL ")
 elif up_prob > 0.52:
-    print("🟨 WEAK BUY (Caution) 🟢")
+    print(" WEAK BUY (Caution) ")
 elif down_prob > 0.52:
-    print("🟨 WEAK SHORT (Caution) 🔴")
+    print(" WEAK SHORT (Caution) ")
 else:
-    print("⚪ HOLD — No Clear Signal")
+    print(" HOLD — No Clear Signal")
 
 # Info
-print(f"\n📌 Model uses {len(features)} features.")
+print(f"\n Model uses {len(features)} features.")

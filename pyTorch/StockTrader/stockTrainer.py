@@ -1,7 +1,6 @@
 # stockTrainerTorch.py
 
 import os
-import pandas as pd
 import numpy as np
 import yfinance as yf
 import ta
@@ -12,18 +11,25 @@ import torch.optim as optim
 from sklearn.model_selection import train_test_split
 
 # User input
-symbol = input("Enter Ticker Symbol (e.g., BTC-USD, AAPL): ").upper()
-folder_name = input("Enter Model Folder: ")
+import sys
+
+if len(sys.argv) >= 3:
+    symbol = sys.argv[1].upper()
+    folder_name = sys.argv[2]
+else:
+    symbol = input("Enter Ticker Symbol (e.g., BTC-USD, AAPL): ").upper()
+    folder_name = input("Enter Model Folder: ")
+
 folder = f"pyTorch/StockTrader/{symbol}/{folder_name}/"
 os.makedirs(folder, exist_ok=True)
 
-print(f"📥 Downloading {symbol} data...")
+print(f"Downloading {symbol} data...")
 data = yf.download(symbol, period="1y", interval="1h", auto_adjust=False)
 if data.empty:
     raise Exception("No data downloaded.")
 
 # Feature engineering
-print("🔧 Computing technical indicators...")
+print("Computing technical indicators...")
 close = data['Close'].squeeze()
 data['rsi'] = ta.momentum.RSIIndicator(close).rsi()
 data['macd'] = ta.trend.MACD(close).macd()
@@ -50,7 +56,7 @@ Y_train_tensor = torch.tensor(Y_train)
 X_test_tensor = torch.tensor(X_test)
 Y_test_tensor = torch.tensor(Y_test)
 
-print(f"📊 Dataset: {len(X)} samples | Train: {len(X_train)} | Test: {len(X_test)}")
+print(f"Dataset: {len(X)} samples | Train: {len(X_train)} | Test: {len(X_test)}")
 
 # Define model
 class StockClassifier(nn.Module):
@@ -73,7 +79,7 @@ criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
 epochs = 50
-print("🚀 Training PyTorch model...")
+print("Training PyTorch model...")
 for epoch in range(epochs):
     model.train()
     optimizer.zero_grad()
@@ -91,9 +97,9 @@ with torch.no_grad():
     preds = model(X_test_tensor)
     predicted_classes = torch.argmax(preds, dim=1)
     acc = (predicted_classes == Y_test_tensor).float().mean().item()
-print(f"\n🎯 Test Accuracy: {acc:.4f}")
+print(f"\nTest Accuracy: {acc:.4f}")
 
 # Save model and metadata
 torch.save(model.state_dict(), folder + "torch_model.pt")
 joblib.dump(features, folder + "model_features.pkl")
-print("💾 Model saved.")
+print("Model saved.")

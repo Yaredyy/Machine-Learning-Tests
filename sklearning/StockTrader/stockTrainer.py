@@ -13,7 +13,7 @@ import os
 symbol = input("Enter Ticker Symbol (e.g., BTC-USD, AAPL): ").upper()
 
 print("📥 Downloading BTC-USD data...")
-data = yf.download(symbol, period="1y", interval="1h")
+data = yf.download(symbol, period="1y", interval="1h", auto_adjust=False)
 if data.empty:
     raise Exception("No data downloaded.")
 

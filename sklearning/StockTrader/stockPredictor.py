@@ -6,16 +6,17 @@ import yfinance as yf
 import ta
 
 # Load model
+symbol = input("Enter Ticker Symbol (e.g., BTC-USD, AAPL): ").upper()
 folder = input("Enter Model Folder: ")
-folder = f"sklearning/StockTrader/{folder}/"
+folder = f"sklearning/StockTrader/{symbol}/{folder}/"
 
 model = joblib.load(folder + "bitcoin_model.pkl")
 features = joblib.load(folder + "model_features.pkl")
 print(f"✅ Loaded model from {folder}")
 
 # Fetch live data
-print("📥 Fetching live BTC data...")
-data = yf.download("BTC-USD", period="5d", interval="1h")
+print(f"📥 Fetching live {symbol} data...")
+data = yf.download(symbol, period="5d", interval="1h", auto_adjust=False)
 if data.empty:
     raise Exception("Download failed.")
 

@@ -42,7 +42,8 @@ model.eval()
 
 # Download latest data
 print(f"Fetching live {symbol} data...")
-data = yf.download(symbol, period="5d", interval="1h", auto_adjust=False)
+data = yf.download(symbol, period="1y", interval="1h", auto_adjust=False)
+
 if data.empty:
     raise Exception("Download failed.")
 

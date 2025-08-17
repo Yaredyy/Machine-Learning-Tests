@@ -1,6 +1,7 @@
 pandas
 scikit-learn
 tensorflow
+torch
 matplotlib
 seaborn
 flask

@@ -5,9 +5,14 @@ import torch.nn as nn
 import yfinance as yf
 import ta
 import joblib
-
-# User input
 import sys
+import random
+seed = 42
+random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
 
 if len(sys.argv) >= 3:
     symbol = sys.argv[1].upper()
@@ -21,22 +26,22 @@ folder = f"pyTorch/StockTrader/{symbol}/{folder_name}/"
 # Load features and model
 features = joblib.load(folder + "model_features.pkl")
 
-class StockClassifier(nn.Module):
-    def __init__(self, input_size):
-        super(StockClassifier, self).__init__()
-        self.net = nn.Sequential(
-            nn.Linear(input_size, 64),
-            nn.ReLU(),
-            nn.Linear(64, 32),
-            nn.ReLU(),
-            nn.Linear(32, 2)
-        )
+# Define model
+class StockLSTM(nn.Module):
+    def __init__(self, input_size, hidden_size=50, num_layers=2, dropout=0.3):
+        super().__init__()
+        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True, dropout=dropout)
+        self.dropout = nn.Dropout(dropout)
+        self.fc = nn.Linear(hidden_size, 2)
 
     def forward(self, x):
-        return self.net(x)
+        output, _ = self.lstm(x)
+        out = self.dropout(output[:, -1, :])  # Use the last output in the sequence
+        out = self.fc(out)
+        return out
 
 # Instantiate and load model
-model = StockClassifier(input_size=len(features))
+model = StockLSTM(input_size=len(features))
 model.load_state_dict(torch.load(folder + "torch_model.pt"))
 model.eval()
 
@@ -64,8 +69,12 @@ if latest.empty:
     raise Exception("Not enough data to predict.")
 print(f"Using data from: {latest.index[0]}")
 
+scaler = joblib.load(folder + "scaler.pkl")
+latest_scaled = scaler.transform(latest.values)
+input_tensor = torch.tensor(latest_scaled.astype('float32')).unsqueeze(1)
+
+
 # Predict
-input_tensor = torch.tensor(latest.values.astype('float32'))
 with torch.no_grad():
     output = model(input_tensor)
     probs = torch.softmax(output, dim=1).numpy()[0]

@@ -9,6 +9,17 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from torch.utils.data import TensorDataset, DataLoader
+import random
+seed = 42
+random.seed(seed)
+np.random.seed(seed)
+torch.manual_seed(seed)
+torch.cuda.manual_seed_all(seed)
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
+
 
 # User input
 import sys
@@ -48,6 +59,8 @@ data.dropna(inplace=True)
 features = ['rsi', 'macd', 'sma_20', 'sma_50', 'price_change', 'volatility', 'Volume', 'ema_12', 'ema_26']
 X = data[features].values.astype(np.float32)
 Y = data['target'].values.astype(np.int64)
+scaler = StandardScaler()
+X = scaler.fit_transform(X)  # Normalize all features
 
 X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, shuffle=False)
 
@@ -55,41 +68,47 @@ X_train_tensor = torch.tensor(X_train)
 Y_train_tensor = torch.tensor(Y_train)
 X_test_tensor = torch.tensor(X_test)
 Y_test_tensor = torch.tensor(Y_test)
+X_train_tensor = X_train_tensor.unsqueeze(1)  
+X_test_tensor = X_test_tensor.unsqueeze(1)  
 
 print(f"Dataset: {len(X)} samples | Train: {len(X_train)} | Test: {len(X_test)}")
 
 # Define model
-class StockClassifier(nn.Module):
-    def __init__(self, input_size):
-        super(StockClassifier, self).__init__()
-        self.net = nn.Sequential(
-            nn.Linear(input_size, 64),
-            nn.ReLU(),
-            nn.Linear(64, 32),
-            nn.ReLU(),
-            nn.Linear(32, 2)
-        )
+class StockLSTM(nn.Module):
+    def __init__(self, input_size, hidden_size=50, num_layers=2, dropout=0.1):
+        super().__init__()
+        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True, dropout=dropout)
+        self.dropout = nn.Dropout(dropout)
+        self.fc = nn.Linear(hidden_size, 2)
 
     def forward(self, x):
-        return self.net(x)
+        output, _ = self.lstm(x)
+        out = self.dropout(output[:, -1, :])  # Use the last output in the sequence
+        out = self.fc(out)
+        return out
 
 # Training
-model = StockClassifier(input_size=len(features))
+model = StockLSTM(input_size=len(features))
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-epochs = 50
+epochs = 150
 print("Training PyTorch model...")
+train_dataset = TensorDataset(X_train_tensor, Y_train_tensor)
+train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+
 for epoch in range(epochs):
     model.train()
-    optimizer.zero_grad()
-    output = model(X_train_tensor)
-    loss = criterion(output, Y_train_tensor)
-    loss.backward()
-    optimizer.step()
-
+    total_loss = 0
+    for batch_x, batch_y in train_loader:
+        optimizer.zero_grad()
+        output = model(batch_x)
+        loss = criterion(output, batch_y)
+        loss.backward()
+        optimizer.step()
+        total_loss += loss.item()
     if (epoch + 1) % 10 == 0:
-        print(f"Epoch {epoch+1}/{epochs}, Loss: {loss.item():.4f}")
+        print(f"Epoch {epoch+1}/{epochs}, Avg Loss: {total_loss/len(train_loader):.4f}")
 
 # Evaluation
 model.eval()
@@ -102,4 +121,6 @@ print(f"\nTest Accuracy: {acc:.4f}")
 # Save model and metadata
 torch.save(model.state_dict(), folder + "torch_model.pt")
 joblib.dump(features, folder + "model_features.pkl")
+joblib.dump(scaler, folder + "scaler.pkl")
+
 print("Model saved.")

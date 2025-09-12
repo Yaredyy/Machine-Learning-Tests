@@ -92,7 +92,7 @@ model = StockLSTM(input_size=len(features))
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-epochs = 150
+epochs = 10000
 print("Training PyTorch model...")
 train_dataset = TensorDataset(X_train_tensor, Y_train_tensor)
 train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)

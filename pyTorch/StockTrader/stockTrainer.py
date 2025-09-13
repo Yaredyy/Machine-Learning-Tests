@@ -8,6 +8,7 @@ import joblib
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from torch.utils.data import TensorDataset, DataLoader
@@ -97,9 +98,12 @@ print("Training PyTorch model...")
 train_dataset = TensorDataset(X_train_tensor, Y_train_tensor)
 train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
 
+temp = []
 for epoch in range(epochs):
     model.train()
     total_loss = 0
+    correct=0
+    total=0
     for batch_x, batch_y in train_loader:
         optimizer.zero_grad()
         output = model(batch_x)
@@ -107,8 +111,24 @@ for epoch in range(epochs):
         loss.backward()
         optimizer.step()
         total_loss += loss.item()
+        preds = torch.argmax(output, dim=1)
+        correct += (preds == batch_y).sum().item()
+        total += batch_y.size(0)
+
     if (epoch + 1) % 10 == 0:
         print(f"Epoch {epoch+1}/{epochs}, Avg Loss: {total_loss/len(train_loader):.4f}")
+        temp.append({
+        "Epoch": epoch+1,
+        "Avg Loss": (total_loss/len(train_loader)),
+        "Accuracy": correct/total,
+        "Stock": symbol,
+        "Features": features,
+        "Train Size": len(X_train),
+        "Test Size": len(X_test),
+        "Scaler": "StandardScaler",
+        "Model": "StockLSTM",
+        "Interval": "1h",
+        "Period": "1y"})
 
 # Evaluation
 model.eval()
@@ -122,5 +142,8 @@ print(f"\nTest Accuracy: {acc:.4f}")
 torch.save(model.state_dict(), folder + "torch_model.pt")
 joblib.dump(features, folder + "model_features.pkl")
 joblib.dump(scaler, folder + "scaler.pkl")
+
+df = pd.DataFrame(temp)
+df.to_csv(folder+"ModelSummary.csv", index=False)
 
 print("Model saved.")

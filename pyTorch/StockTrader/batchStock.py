@@ -6,9 +6,10 @@ python_path = r"C:/Users/yared/Documents/GitHub/Machine-Learning-Tests/myEnv/Scr
 
 # List of tickers to process
 tickers = [
-    "BTC-USD", "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA",
-   "ETH-USD", "SPY", "GC=F"
+    "BTC-USD"
 ]
+#, "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA",
+#   "ETH-USD", "SPY", "GC=F"
 
 folder_name = input("Enter Model Folder: ")  # same folder for all or customize if you want
 

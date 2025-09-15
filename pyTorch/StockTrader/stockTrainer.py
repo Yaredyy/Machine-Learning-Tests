@@ -93,17 +93,21 @@ model = StockLSTM(input_size=len(features))
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-epochs = 10000
+epochs = 80000
 print("Training PyTorch model...")
 train_dataset = TensorDataset(X_train_tensor, Y_train_tensor)
 train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
 
 temp = []
+
+best_metric = float('-inf')
+
 for epoch in range(epochs):
     model.train()
     total_loss = 0
     correct=0
     total=0
+
     for batch_x, batch_y in train_loader:
         optimizer.zero_grad()
         output = model(batch_x)
@@ -115,12 +119,19 @@ for epoch in range(epochs):
         correct += (preds == batch_y).sum().item()
         total += batch_y.size(0)
 
+    Accuracy = correct/total
+
+    if best_metric<=Accuracy:
+        best_metric=Accuracy
+        torch.save(model.state_dict(), folder + "checkpoint_model.pt")
+        print("Checkpoint Saved!")
+
     if (epoch + 1) % 10 == 0:
         print(f"Epoch {epoch+1}/{epochs}, Avg Loss: {total_loss/len(train_loader):.4f}")
         temp.append({
         "Epoch": epoch+1,
         "Avg Loss": (total_loss/len(train_loader)),
-        "Accuracy": correct/total,
+        "Accuracy": Accuracy,
         "Stock": symbol,
         "Features": features,
         "Train Size": len(X_train),
@@ -136,10 +147,10 @@ with torch.no_grad():
     preds = model(X_test_tensor)
     predicted_classes = torch.argmax(preds, dim=1)
     acc = (predicted_classes == Y_test_tensor).float().mean().item()
-print(f"\nTest Accuracy: {acc:.4f}")
+print(f"\nTest Accuracy: {acc:.4f} | best_metric:{best_metric}")
 
 # Save model and metadata
-torch.save(model.state_dict(), folder + "torch_model.pt")
+torch.save(model.state_dict(), folder + "final_model.pt")
 joblib.dump(features, folder + "model_features.pkl")
 joblib.dump(scaler, folder + "scaler.pkl")
 

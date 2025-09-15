@@ -13,6 +13,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from torch.utils.data import TensorDataset, DataLoader
 import random
+from torch.optim.lr_scheduler import ReduceLROnPlateau
+
 seed = 42
 random.seed(seed)
 np.random.seed(seed)
@@ -101,6 +103,14 @@ train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
 temp = []
 
 best_metric = float('-inf')
+patience = 2500
+counter = 0
+
+unique, counts = np.unique(Y, return_counts=True)
+print("Class distribution:", dict(zip(unique, counts)))
+
+scheduler = ReduceLROnPlateau(optimizer, mode='max', factor=0.5, patience=300, verbose=True)
+
 
 for epoch in range(epochs):
     model.train()
@@ -120,11 +130,18 @@ for epoch in range(epochs):
         total += batch_y.size(0)
 
     Accuracy = correct/total
+    scheduler.step(Accuracy)
 
     if best_metric<=Accuracy:
         best_metric=Accuracy
         torch.save(model.state_dict(), folder + "checkpoint_model.pt")
         print("Checkpoint Saved!")
+        counter = 0
+    else:
+        counter += 1
+        if (counter>patience):
+            print("Counter is above Patience!")
+            break
 
     if (epoch + 1) % 10 == 0:
         print(f"Epoch {epoch+1}/{epochs}, Avg Loss: {total_loss/len(train_loader):.4f}")

@@ -5,6 +5,7 @@ import torch.nn as nn
 import yfinance as yf
 import ta
 import joblib
+import json
 import sys
 import random
 seed = 42
@@ -23,8 +24,10 @@ else:
     
 folder = f"pyTorch/StockTrader/{symbol}/{folder_name}/"
 
+features_path_json = folder + "model_features.json"
 # Load features and model
-features = joblib.load(folder + "model_features.pkl")
+with open(features_path_json, "r") as f:
+    features = json.load(f)
 
 # Define model
 class StockLSTM(nn.Module):

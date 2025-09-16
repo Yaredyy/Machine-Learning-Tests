@@ -77,10 +77,15 @@ X = ds[['id', 'diagnosis', 'radius_mean']].values
         })
     dataframe = pd.dataframe(temp)
 
+
+
+
 **tips for dataframes are:
 max_accuracy = df['Accuracy'].max()
 index_max_accuracy = df['Accuracy'].idxmax()
+
 X = df.drop(columns=["winner","bet_advantage"])
+
 correct = np.sum(predicted_classes == Y_test)
 incorrect = len(predicted_classes) - correct
 Y_test = Y_test.reset_index(drop=True) #reset index after dropping rows

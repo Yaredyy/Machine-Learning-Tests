@@ -158,7 +158,7 @@ epochs = 80000
 patience = 75000
 best_metric = float('-inf')
 counter = 0
-train_loader = DataLoader(TensorDataset(X_train_tensor, Y_train_tensor), batch_size=256, shuffle=True,pin_memory=True,num_workers=0)
+train_loader = DataLoader(TensorDataset(X_train_tensor, Y_train_tensor), batch_size=256, shuffle=True,pin_memory=True)
 
 temp_path = folder + "checkpoint_model_temp.pt"
 final_path = folder + "checkpoint_model.pt"

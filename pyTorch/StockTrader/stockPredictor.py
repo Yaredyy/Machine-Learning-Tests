@@ -31,7 +31,7 @@ with open(features_path_json, "r") as f:
 
 # Define model
 class StockLSTM(nn.Module):
-    def __init__(self, input_size, hidden_size=50, num_layers=2, dropout=0.3):
+    def __init__(self, input_size, hidden_size=50, num_layers=2, dropout=0.5):
         super().__init__()
         self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True, dropout=dropout)
         self.dropout = nn.Dropout(dropout)
@@ -50,7 +50,7 @@ model.eval()
 
 # Download latest data
 print(f"Fetching live {symbol} data...")
-data = yf.download(symbol, period="1y", interval="1h", auto_adjust=False)
+data = yf.download(symbol, period="1y", interval="24h", auto_adjust=False)
 
 if data.empty:
     raise Exception("Download failed.")

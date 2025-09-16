@@ -1,8 +1,13 @@
-tensorflow
+tensorflow 
 termcolor
 threadpoolctl
 torch
+#for torch cuda (nvidia)  pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
 #Make sure you have the gpu torch version, and verify it works with your gpu. Only cu118 works with my 1650 super, and it took forever to find out.
+#For m1 mac users, install pip3 install --pre torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/nightly/cpu
+#to uninstall pip uninstall torch torchvision torchaudio -y
+torchvision
+torchaudio
 urllib3
 websockets
 Werkzeug

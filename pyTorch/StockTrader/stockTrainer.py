@@ -27,11 +27,20 @@ torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 
 print("CUDA Available:", torch.cuda.is_available())
-print("GPU Name:", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "No GPU")
 print("CUDA version (PyTorch built with):", torch.version.cuda)
 
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+if torch.cuda.is_available():
+    print("Using GPU. Name:", torch.cuda.get_device_name(0))
+    device = torch.device("cuda")
+else:
+    if torch.backends.mps.is_available():
+        device = torch.device("mps")
+        print("Using Apple Silicon GPU.")
+    else:
+        device = torch.device("cpu")
+        print("Using CPU.")
+
 
 
 stop_training = False
@@ -58,7 +67,7 @@ os.makedirs(folder, exist_ok=True)
 
 
 print(f"Downloading {symbol} data...")
-data = yf.download(symbol, period="1y", interval="1h", auto_adjust=False)
+data = yf.download(symbol, period="1y", interval="24h", auto_adjust=False)
 if data.empty:
     raise Exception("No data downloaded.")
 
@@ -139,10 +148,12 @@ weights = compute_class_weight(class_weight='balanced',classes=unique, y=Y_seq)
 class_weights = torch.tensor(weights,dtype=torch.float).to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-4)
-scheduler = ReduceLROnPlateau(optimizer, mode='max', factor=0.5, patience=50)
+scheduler = ReduceLROnPlateau(optimizer, mode='max', factor=0.2, threshold=0.01, patience=50)
 
 
 def safe_save(func, *args, **kwargs):
+    if args is NaN:
+        return
     try:
         func(*args, **kwargs)
     except Exception as e:
@@ -155,7 +166,7 @@ scaler_path = folder + "scaler.pkl"
 
 
 epochs = 80000
-patience = 75000
+patien = 25000
 best_metric = float('-inf')
 counter = 0
 train_loader = DataLoader(TensorDataset(X_train_tensor, Y_train_tensor), batch_size=256, shuffle=True,pin_memory=True)
@@ -215,7 +226,7 @@ try:
             counter = 0
         else:
             counter += 1
-            if counter > patience:
+            if counter > patien:
                 print("Early stopping triggered.")
                 break
 
@@ -234,7 +245,7 @@ try:
                 "Test Size": len(X_test),
                 "Scaler": "StandardScaler",
                 "Model": "StockLSTM",
-                "Interval": "1h",
+                "Interval": "24h",
                 "Period": "1y",
                 "Window Size": window_size
             })

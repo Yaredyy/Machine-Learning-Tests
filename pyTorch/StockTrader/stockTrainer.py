@@ -13,6 +13,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from torch.utils.data import TensorDataset, DataLoader
 from torch.optim.lr_scheduler import ReduceLROnPlateau
+from sklearn.utils.class_weight import compute_class_weight
 import signal
 import random
 
@@ -73,8 +74,8 @@ data['volatility'] = data['Close'].rolling(10).std()
 data['ema_12'] = data['Close'].ewm(span=12).mean()
 data['ema_26'] = data['Close'].ewm(span=26).mean()
 
-# Target: will the price go up in 3 hours?
-data['target'] = (data['Close'].shift(-3) > data['Close']).astype(int)
+# Target: will the price go up in 24 hours?
+data['target'] = (data['Close'].shift(-24) > data['Close']).astype(int)
 data.dropna(inplace=True)
 
 
@@ -134,9 +135,11 @@ class StockLSTM(nn.Module):
 
 model = StockLSTM(input_size=len(features))
 model = model.to(device)
+weights = compute_class_weight(class_weight='balanced',classes=unique, y=Y_seq)
+class_weights = torch.tensor(weights,dtype=torch.float).to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-4)
-scheduler = ReduceLROnPlateau(optimizer, mode='max', factor=0.5, patience=5)
+scheduler = ReduceLROnPlateau(optimizer, mode='max', factor=0.5, patience=50)
 
 
 def safe_save(func, *args, **kwargs):
@@ -152,7 +155,7 @@ scaler_path = folder + "scaler.pkl"
 
 
 epochs = 80000
-patience = 250
+patience = 75000
 best_metric = float('-inf')
 counter = 0
 train_loader = DataLoader(TensorDataset(X_train_tensor, Y_train_tensor), batch_size=256, shuffle=True,pin_memory=True,num_workers=0)

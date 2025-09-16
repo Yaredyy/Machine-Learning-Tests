@@ -106,8 +106,8 @@ def create_sequences(X, Y, window_size):
 window_size = 24  # 24 hours of lookback
 X_seq, Y_seq = create_sequences(X, Y, window_size)
 
-X_train_full, X_test, Y_train_full, Y_test = train_test_split(X_seq, Y_seq, test_size=0.2, shuffle=False)
-X_train, X_val, Y_train, Y_val = train_test_split(X_train_full, Y_train_full, test_size=0.2, shuffle=False)
+X_train_full, X_test, Y_train_full, Y_test = train_test_split(X_seq, Y_seq, test_size=0.3, shuffle=False)
+X_train, X_val, Y_train, Y_val = train_test_split(X_train_full, Y_train_full, test_size=0.3, shuffle=False)
 
 X_train_tensor = torch.tensor(X_train)
 Y_train_tensor = torch.tensor(Y_train)
@@ -172,6 +172,11 @@ train_loader = DataLoader(TensorDataset(X_train_tensor, Y_train_tensor), batch_s
 temp_path = folder + "checkpoint_model_temp.pt"
 final_path = folder + "checkpoint_model.pt"
 
+checkpoint_features_path = folder + "checkpoint_model_features.json"
+checkpoint_scaler_path = folder + "checkpoint_scaler.pkl"
+Last_path = folder + "final_model.pt"
+
+
 temp = []
 
 
@@ -220,12 +225,16 @@ try:
             best_metric = val_acc
             torch.save(model.state_dict(), temp_path)
             os.replace(temp_path, final_path)
+            df = pd.DataFrame(temp)
+            safe_save(df.to_csv, csv_path)
+            safe_save(lambda: json.dump(features, open(checkpoint_features_path, "w"), indent=4))
+            safe_save(joblib.dump, scaler, checkpoint_scaler_path)
             print(f"Epoch {epoch+1}: New best val accuracy: {val_acc:.4f} — Checkpoint saved!")
             counter = 0
         else:
             counter += 1
             if counter > patien:
-                print("Early stopping triggered.")
+                print(f"Early stopping triggered at Epoch:{epoch+1}, after a pactience of {patien}.")
                 break
 
         if (epoch + 1) % 10 == 0:
@@ -255,7 +264,7 @@ except Exception as e:
     safe_save(df.to_csv, csv_path)
     safe_save(lambda: json.dump(features, open(features_path, "w"), indent=4))
     safe_save(joblib.dump, scaler, scaler_path)
-    torch.save(model.state_dict(), folder + "final_model.pt")
+    torch.save(model.state_dict(), Last_path)
     print("Model saved!")
     sys.exit(1)
 
@@ -265,7 +274,7 @@ except KeyboardInterrupt:
     safe_save(df.to_csv, csv_path)
     safe_save(lambda: json.dump(features, open(features_path, "w"), indent=4))
     safe_save(joblib.dump, scaler, scaler_path)
-    torch.save(model.state_dict(), folder + "final_model.pt")
+    torch.save(model.state_dict(), Last_path)
     print("Model saved!")
     sys.exit(0)
 
@@ -282,11 +291,12 @@ with torch.no_grad():
 safe_save(df.to_csv, csv_path)
 safe_save(lambda: json.dump(features, open(features_path, "w"), indent=4))
 safe_save(joblib.dump, scaler, scaler_path)
-torch.save(model.state_dict(), folder + "final_model.pt")
+torch.save(model.state_dict(), Last_path)
 
 print(" Model saved successfully.")
 
-model.load_state_dict(torch.load(folder + "checkpoint_model.pt"))
+model.load_state_dict(torch.load(final_path))
+
 model.eval()
 with torch.no_grad():
     test_preds = model(X_test_tensor)
@@ -296,5 +306,7 @@ with torch.no_grad():
 
 print(f"\n Final Val Accuracy: {final_acc:.4f} | Best Val Accuracy: {best_acc:.4f} | Best_metic: {best_metric:.4f}")
 
-
-print("Training loop exited normally or by User based signal.")
+if stop_training:
+    print("Training loop exited by user or error")
+else:
+    print("Training loop exited normally")

@@ -67,7 +67,7 @@ os.makedirs(folder, exist_ok=True)
 
 
 print(f"Downloading {symbol} data...")
-data = yf.download(symbol, period="1y", interval="24h", auto_adjust=False)
+data = yf.download(symbol, period="1y", interval="1h", auto_adjust=False)
 if data.empty:
     raise Exception("No data downloaded.")
 
@@ -148,12 +148,10 @@ weights = compute_class_weight(class_weight='balanced',classes=unique, y=Y_seq)
 class_weights = torch.tensor(weights,dtype=torch.float).to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-4)
-scheduler = ReduceLROnPlateau(optimizer, mode='max', factor=0.2, threshold=0.01, patience=50)
+scheduler = ReduceLROnPlateau(optimizer, mode='max', factor=0.5, threshold=0.01, patience=50)
 
 
 def safe_save(func, *args, **kwargs):
-    if args is NaN:
-        return
     try:
         func(*args, **kwargs)
     except Exception as e:

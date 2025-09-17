@@ -24,14 +24,13 @@ else:
     
 folder = f"pyTorch/StockTrader/{symbol}/{folder_name}/"
 
-features_path_json = folder + "model_features.json"
-# Load features and model
+features_path_json = folder + "checkpoint_features.json"
 with open(features_path_json, "r") as f:
     features = json.load(f)
 
 # Define model
 class StockLSTM(nn.Module):
-    def __init__(self, input_size, hidden_size=50, num_layers=2, dropout=0.5):
+    def __init__(self, input_size, hidden_size=32, num_layers=2, dropout=0.5):
         super().__init__()
         self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True, dropout=dropout)
         self.dropout = nn.Dropout(dropout)
@@ -39,13 +38,12 @@ class StockLSTM(nn.Module):
 
     def forward(self, x):
         output, _ = self.lstm(x)
-        out = self.dropout(output[:, -1, :])  # Use the last output in the sequence
-        out = self.fc(out)
-        return out
+        out = self.dropout(output[:, -1, :])
+        return self.fc(out)
 
 # Instantiate and load model
 model = StockLSTM(input_size=len(features))
-model.load_state_dict(torch.load(folder + "torch_model.pt"))
+model.load_state_dict(torch.load(folder + "checkpoint_model.pt"))
 model.eval()
 
 # Download latest data
@@ -71,8 +69,8 @@ latest = data[features].dropna().tail(1)
 if latest.empty:
     raise Exception("Not enough data to predict.")
 print(f"Using data from: {latest.index[0]}")
-
-scaler = joblib.load(folder + "scaler.pkl")
+scaler_path = folder + "checkpoint_scaler.pkl"
+scaler = joblib.load(scaler_path)
 latest_scaled = scaler.transform(latest.values)
 input_tensor = torch.tensor(latest_scaled.astype('float32')).unsqueeze(1)
 

@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import yfinance as yf
 import ta
+import json
 import joblib
 import sys
 import numpy as np
@@ -29,12 +30,15 @@ else:
 folder = f"pyTorch/StockTrader/{symbol}/{folder_name}/"
 
 # Load features and model
-features = joblib.load(folder + "model_features.pkl")
-scaler = joblib.load(folder + "scaler.pkl")
+features_path = folder + "checkpoint_features.json"
+scaler_path = folder + "checkpoint_scaler.pkl"
+scaler = joblib.load(scaler_path)
+with open(features_path, "r") as f:
+    features = json.load(f)
 
 # Define model
 class StockLSTM(nn.Module):
-    def __init__(self, input_size, hidden_size=50, num_layers=2, dropout=0.3):
+    def __init__(self, input_size, hidden_size=32, num_layers=2, dropout=0.5):
         super().__init__()
         self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True, dropout=dropout)
         self.dropout = nn.Dropout(dropout)
@@ -42,12 +46,12 @@ class StockLSTM(nn.Module):
 
     def forward(self, x):
         output, _ = self.lstm(x)
-        out = self.dropout(output[:, -1, :])  # Use last output in sequence
+        out = self.dropout(output[:, -1, :])
         return self.fc(out)
 
 # Instantiate and load model
 model = StockLSTM(input_size=len(features))
-model.load_state_dict(torch.load(folder + "torch_model.pt"))
+model.load_state_dict(torch.load(folder + "checkpoint_model.pt"))
 model.eval()
 
 # Download data

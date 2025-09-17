@@ -158,7 +158,7 @@ def safe_save(func, *args, **kwargs):
         print(f"Failed to save with {func.__name__}: {e}")
 
 csv_path = folder + "ModelSummary.csv"
-features_path = folder + "model_features.json"
+features_path = folder + "features.json"
 scaler_path = folder + "scaler.pkl"
 
 
@@ -172,7 +172,7 @@ train_loader = DataLoader(TensorDataset(X_train_tensor, Y_train_tensor), batch_s
 temp_path = folder + "checkpoint_model_temp.pt"
 final_path = folder + "checkpoint_model.pt"
 
-checkpoint_features_path = folder + "checkpoint_model_features.json"
+checkpoint_features_path = folder + "checkpoint_features.json"
 checkpoint_scaler_path = folder + "checkpoint_scaler.pkl"
 Last_path = folder + "final_model.pt"
 

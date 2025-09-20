@@ -16,7 +16,7 @@ if not os.path.exists(python_path):
     python_path = python_path1
 
 if not os.path.exists(python_path):
-    print("Error with python")
+    print("Error with python, please reset paths or reinstall python/env")
     sys.exit(0)
 
 folder_name = input("Enter Model Folder: ")  # same folder for all or customize if you want

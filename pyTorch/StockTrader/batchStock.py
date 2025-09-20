@@ -1,15 +1,16 @@
 import subprocess
 import os
 
-# Path to your Python executable inside your env
-python_path = r"myEnv/Scripts/python.exe"
-python_path1 = f"myEnv/bin/python3"
 
 # List of tickers to process
 tickers = [
     "BTC-USD", "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA",
    "ETH-USD", "SPY", "GC=F"
 ]
+
+# Path to your Python executable inside env
+python_path = r"myEnv/Scripts/python.exe"
+python_path1 = f"myEnv/bin/python3"
 
 if not os.path.exists(python_path):
     python_path = python_path1

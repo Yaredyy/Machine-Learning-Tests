@@ -1,8 +1,18 @@
 import subprocess
 import os
 
-# Path to Python executable in your environment
-python_path = r"C:/Users/yared/Documents/GitHub/Machine-Learning-Tests/myEnv/Scripts/python.exe"
+
+# Path to your Python executable inside env
+python_path = r"myEnv/Scripts/python.exe"
+python_path1 = f"myEnv/bin/python3"
+
+if not os.path.exists(python_path):
+    python_path = python_path1
+
+if not os.path.exists(python_path):
+    print("Error with python")
+    sys.exit(0)
+
 
 # List of tickers
 tickers = [

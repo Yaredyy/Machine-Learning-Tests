@@ -76,13 +76,13 @@ def create_sequences(X, Y, window_size):
     return np.array(X_seq), np.array(Y_seq)
 
 year = 2025
-wind=50
+wind=1
 c=0
 
 def new_start():
-    return datetime(year-(50*(c+1)),1,1)
+    return datetime(year-(wind*(c+1)),1,1)
 def new_end():
-    return datetime(year-(50*(c)),1,1)
+    return datetime(year-(wind*(c)),1,1)
  
 print(f"Downloading {symbol} data...")
 data = yf.download(symbol, start= new_start(), end= new_end(), auto_adjust=False)
@@ -114,7 +114,7 @@ scaler = StandardScaler()
 X = scaler.fit_transform(X) 
 
 
-window_size = 24  # 24 hours of lookback
+window_size = 24  # 24 days? of lookback
 X_seq, Y_seq = create_sequences(X, Y, window_size)
 
 X_train_full, X_test, Y_train_full, Y_test = train_test_split(X_seq, Y_seq, test_size=0.3, shuffle=False)
@@ -175,7 +175,7 @@ scaler_path = folder + "scaler.pkl"
 
 
 epochs = 80000
-patien = 100
+patien = 1010
 best_metric = float('-inf')
 counter = 0
 train_loader = DataLoader(TensorDataset(X_train_tensor, Y_train_tensor), batch_size=256, shuffle=True,pin_memory=True)
@@ -268,7 +268,7 @@ try:
                 "Window Size": window_size
             })
         
-        if (epoch +1)%500 == 0:
+        if (epoch +1)%50 == 0:
             print(f"Downloading new {symbol} data...")
             data = yf.download(symbol, start= new_start(), end= new_end(), auto_adjust=False)
             c+=1

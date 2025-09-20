@@ -164,7 +164,7 @@ scaler_path = folder + "scaler.pkl"
 
 
 epochs = 80000
-patien = 25000
+patien = 100
 best_metric = float('-inf')
 counter = 0
 train_loader = DataLoader(TensorDataset(X_train_tensor, Y_train_tensor), batch_size=256, shuffle=True,pin_memory=True)

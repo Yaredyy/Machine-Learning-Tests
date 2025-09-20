@@ -16,7 +16,7 @@ for symbol in tickers:
     print("\n" + "="*50)
     print(f"Evaluating model for {symbol}...")
 
-    model_path = f"pyTorch/StockTrader/{symbol}/{folder_name}/torch_model.pt"
+    model_path = f"pyTorch/StockTrader/{symbol}/{folder_name}/checkpoint_model.pt"
     if not os.path.exists(model_path):
         print(f"Model not found for {symbol}, skipping...")
         continue

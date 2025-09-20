@@ -68,12 +68,12 @@ os.makedirs(folder, exist_ok=True)
 
 
 # Sequence windowing
-def create_sequences(X, Y, window_size):
-    X_seq, Y_seq = [], []
-    for i in range(len(X) - window_size):
-        X_seq.append(X[i:i+window_size])
-        Y_seq.append(Y[i+window_size])
-    return np.array(X_seq), np.array(Y_seq)
+# def create_sequences(X, Y, window_size):
+#     X_seq, Y_seq = [], []
+#     for i in range(len(X) - window_size):
+#         X_seq.append(X[i:i+window_size])
+#         Y_seq.append(Y[i+window_size])
+#     return np.array(X_seq), np.array(Y_seq)
 
 year = 2025
 wind=1
@@ -90,7 +90,69 @@ c+=1
 if data.empty:
     raise Exception("No data downloaded.")
 
-print("Computing technical indicators...")
+
+
+def formatNewData():
+    print("Computing new technical indicators...")
+    close = data['Close'].squeeze()
+    data['rsi'] = ta.momentum.RSIIndicator(close).rsi()
+    data['macd'] = ta.trend.MACD(close).macd()
+    data['sma_20'] = data['Close'].rolling(20).mean()
+    data['sma_50'] = data['Close'].rolling(50).mean()
+    data['price_change'] = data['Close'].pct_change(1)
+    data['volatility'] = data['Close'].rolling(10).std()
+    data['ema_12'] = data['Close'].ewm(span=12).mean()
+    data['ema_26'] = data['Close'].ewm(span=26).mean()
+
+    # Target: will the price go up in 24 hours?
+    data['target'] = (data['Close'].shift(-24) > data['Close']).astype(int)
+    data.dropna(inplace=True)
+
+
+    X = data[features].values.astype(np.float32)
+    Y = data['target'].values.astype(np.int64)
+
+
+    X_train_full, X_test, Y_train_full, Y_test = train_test_split(X, Y, test_size=0.3, shuffle=False,train_size=.7)
+    X_train, X_val, Y_train, Y_val = train_test_split(X_train_full, Y_train_full, test_size=0.3, shuffle=False,train_size=.7)
+
+
+    scaler = StandardScaler()
+
+    # Fit on train, transform all sets
+    X_train = scaler.fit_transform(X_train)
+    X_val = scaler.transform(X_val)
+    X_test = scaler.transform(X_test)
+
+    # Convert to tensors
+    X_train_tensor = torch.tensor(X_train, dtype=torch.float32)
+    Y_train_tensor = torch.tensor(Y_train, dtype=torch.long)
+
+    X_val_tensor = torch.tensor(X_val, dtype=torch.float32).to(device)
+    Y_val_tensor = torch.tensor(Y_val, dtype=torch.long).to(device)
+
+    X_test_tensor = torch.tensor(X_test, dtype=torch.float32).to(device)
+    Y_test_tensor = torch.tensor(Y_test, dtype=torch.long).to(device)
+    print(f"New Dataset: {len(X)} samples | Train: {len(X_train)} | Val: {len(X_val)} | Test: {len(X_test)}")
+    unique, counts = np.unique(Y_test, return_counts=True)
+    print("New Class distribution:", dict(zip(unique, counts)))
+    if len(unique) < 2:
+        print("Only one class found in dataset, disabling class weights.")
+        class_weights = None
+    else:
+        weights = compute_class_weight(class_weight='balanced', classes=np.array([0,1]), y=Y_test)
+        class_weights = torch.tensor(weights, dtype=torch.float).to(device)
+    criterion = nn.CrossEntropyLoss(weight=class_weights)
+    if torch.cuda.is_available():
+        train_loader = DataLoader(TensorDataset(X_train_tensor, Y_train_tensor), batch_size=256, shuffle=True,pin_memory=True)
+    else:
+        train_loader = DataLoader(TensorDataset(X_train_tensor, Y_train_tensor), batch_size=256, shuffle=True,pin_memory=False)
+
+
+
+features = ['rsi', 'macd', 'sma_20', 'sma_50', 'price_change', 'volatility', 'Volume', 'ema_12', 'ema_26']
+
+print("Computing new technical indicators...")
 close = data['Close'].squeeze()
 data['rsi'] = ta.momentum.RSIIndicator(close).rsi()
 data['macd'] = ta.trend.MACD(close).macd()
@@ -106,35 +168,36 @@ data['target'] = (data['Close'].shift(-24) > data['Close']).astype(int)
 data.dropna(inplace=True)
 
 
-features = ['rsi', 'macd', 'sma_20', 'sma_50', 'price_change', 'volatility', 'Volume', 'ema_12', 'ema_26']
 X = data[features].values.astype(np.float32)
 Y = data['target'].values.astype(np.int64)
 
+
+X_train_full, X_test, Y_train_full, Y_test = train_test_split(X, Y, test_size=0.3, shuffle=False,train_size=.7)
+X_train, X_val, Y_train, Y_val = train_test_split(X_train_full, Y_train_full, test_size=0.3, shuffle=False,train_size=.7)
+
+
 scaler = StandardScaler()
-X = scaler.fit_transform(X) 
+
+# Fit on train, transform all sets
+X_train = scaler.fit_transform(X_train)
+X_val = scaler.transform(X_val)
+X_test = scaler.transform(X_test)
+
+# Convert to tensors
+X_train_tensor = torch.tensor(X_train, dtype=torch.float32)
+Y_train_tensor = torch.tensor(Y_train, dtype=torch.long)
+
+X_val_tensor = torch.tensor(X_val, dtype=torch.float32).to(device)
+Y_val_tensor = torch.tensor(Y_val, dtype=torch.long).to(device)
+
+X_test_tensor = torch.tensor(X_test, dtype=torch.float32).to(device)
+Y_test_tensor = torch.tensor(Y_test, dtype=torch.long).to(device)
 
 
-window_size = 24  # 24 days? of lookback
-X_seq, Y_seq = create_sequences(X, Y, window_size)
-
-X_train_full, X_test, Y_train_full, Y_test = train_test_split(X_seq, Y_seq, test_size=0.3, shuffle=False)
-X_train, X_val, Y_train, Y_val = train_test_split(X_train_full, Y_train_full, test_size=0.3, shuffle=False)
-
-X_train_tensor = torch.tensor(X_train)
-Y_train_tensor = torch.tensor(Y_train)
-X_val_tensor = torch.tensor(X_val)
-Y_val_tensor = torch.tensor(Y_val)
-X_test_tensor = torch.tensor(X_test)
-Y_test_tensor = torch.tensor(Y_test)
-
-X_val_tensor = X_val_tensor.to(device)
-Y_val_tensor = Y_val_tensor.to(device)
-X_test_tensor = X_test_tensor.to(device)
-Y_test_tensor = Y_test_tensor.to(device)
 
 
-print(f"Dataset: {len(X_seq)} samples | Train: {len(X_train)} | Val: {len(X_val)} | Test: {len(X_test)}")
-unique, counts = np.unique(Y_seq, return_counts=True)
+print(f"Dataset: {len(X)} samples | Train: {len(X_train)} | Val: {len(X_val)} | Test: {len(X_test)}")
+unique, counts = np.unique(Y_test, return_counts=True)
 print("Class distribution:", dict(zip(unique, counts)))
 
 
@@ -148,15 +211,21 @@ class StockLSTM(nn.Module):
         self.fc = nn.Linear(hidden_size, 2)
 
     def forward(self, x):
+        if x.dim() == 2:  # shape: [batch, features]
+            x = x.unsqueeze(1)  # -> [batch, seq_len=1, features]
         output, _ = self.lstm(x)
-        out = self.dropout(output[:, -1, :])
+        out = self.dropout(output[:, -1, :])  # now valid
         return self.fc(out)
 
 
 model = StockLSTM(input_size=len(features))
 model = model.to(device)
-weights = compute_class_weight(class_weight='balanced',classes=unique, y=Y_seq)
-class_weights = torch.tensor(weights,dtype=torch.float).to(device)
+if len(unique) < 2:
+    print("Only one class found in dataset, disabling class weights.")
+    class_weights = None
+else:
+    weights = compute_class_weight(class_weight='balanced', classes=np.array([0,1]), y=Y_test)
+    class_weights = torch.tensor(weights, dtype=torch.float).to(device)
 criterion = nn.CrossEntropyLoss(weight=class_weights)
 optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-4)
 scheduler = ReduceLROnPlateau(optimizer, mode='max', factor=0.5, threshold=0.01, patience=50)
@@ -174,11 +243,16 @@ scaler_path = folder + "scaler.pkl"
 
 
 
-epochs = 80000
-patien = 1010
-best_metric = float('-inf')
+epochs = 100000
+patien = 50010
+best_metric = float(0)
 counter = 0
-train_loader = DataLoader(TensorDataset(X_train_tensor, Y_train_tensor), batch_size=256, shuffle=True,pin_memory=True)
+
+if torch.cuda.is_available():
+    train_loader = DataLoader(TensorDataset(X_train_tensor, Y_train_tensor), batch_size=256, shuffle=True,pin_memory=True)
+else:
+    train_loader = DataLoader(TensorDataset(X_train_tensor, Y_train_tensor), batch_size=256, shuffle=True,pin_memory=False)
+    
 
 temp_path = folder + "checkpoint_model_temp.pt"
 final_path = folder + "checkpoint_model.pt"
@@ -264,66 +338,29 @@ try:
                 "Scaler": "StandardScaler",
                 "Model": "StockLSTM",
                 "Interval": "24h",
-                "Period": "1y",
-                "Window Size": window_size
+                "Period": "1y"
+                # "Window Size": window_size
             })
         
-        if (epoch +1)%50 == 0:
+        if (epoch +1)%100 == 0:
             print(f"Downloading new {symbol} data...")
-            data = yf.download(symbol, start= new_start(), end= new_end(), auto_adjust=False)
+
+            try:
+                newdata = yf.download(symbol, start= new_start(), end= new_end(), auto_adjust=False)
+            except Exception:
+                print(f"download failed, caught:{e}")
+            
             c+=1
-            if data.empty:
-                raise Exception("No data downloaded.")
-
-            print("Computing new technical indicators...")
-            close = data['Close'].squeeze()
-            data['rsi'] = ta.momentum.RSIIndicator(close).rsi()
-            data['macd'] = ta.trend.MACD(close).macd()
-            data['sma_20'] = data['Close'].rolling(20).mean()
-            data['sma_50'] = data['Close'].rolling(50).mean()
-            data['price_change'] = data['Close'].pct_change(1)
-            data['volatility'] = data['Close'].rolling(10).std()
-            data['ema_12'] = data['Close'].ewm(span=12).mean()
-            data['ema_26'] = data['Close'].ewm(span=26).mean()
-
-            # Target: will the price go up in 24 hours?
-            data['target'] = (data['Close'].shift(-24) > data['Close']).astype(int)
-            data.dropna(inplace=True)
+    
+            if newdata.empty:
+                print("No data downloaded.")
+            else:
+                data = newdata
+                formatNewData()
+            
 
 
-            features = ['rsi', 'macd', 'sma_20', 'sma_50', 'price_change', 'volatility', 'Volume', 'ema_12', 'ema_26']
-            X = data[features].values.astype(np.float32)
-            Y = data['target'].values.astype(np.int64)
 
-            scaler = StandardScaler()
-            X = scaler.fit_transform(X) 
-
-
-            window_size = 24  # 24 hours of lookback
-            X_seq, Y_seq = create_sequences(X, Y, window_size)
-
-            X_train_full, X_test, Y_train_full, Y_test = train_test_split(X_seq, Y_seq, test_size=0.3, shuffle=False)
-            X_train, X_val, Y_train, Y_val = train_test_split(X_train_full, Y_train_full, test_size=0.3, shuffle=False)
-
-            X_train_tensor = torch.tensor(X_train)
-            Y_train_tensor = torch.tensor(Y_train)
-            X_val_tensor = torch.tensor(X_val)
-            Y_val_tensor = torch.tensor(Y_val)
-            X_test_tensor = torch.tensor(X_test)
-            Y_test_tensor = torch.tensor(Y_test)
-
-            X_val_tensor = X_val_tensor.to(device)
-            Y_val_tensor = Y_val_tensor.to(device)
-            X_test_tensor = X_test_tensor.to(device)
-            Y_test_tensor = Y_test_tensor.to(device)
-
-
-            print(f"New Dataset: {len(X_seq)} samples | Train: {len(X_train)} | Val: {len(X_val)} | Test: {len(X_test)}")
-            unique, counts = np.unique(Y_seq, return_counts=True)
-            print("New Class distribution:", dict(zip(unique, counts)))
-            weights = compute_class_weight(class_weight='balanced',classes=unique, y=Y_seq)
-            class_weights = torch.tensor(weights,dtype=torch.float).to(device)
-            criterion = nn.CrossEntropyLoss(weight=class_weights)
 
 except Exception as e:
     print(f"Exception caught: {e}")

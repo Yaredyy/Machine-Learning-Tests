@@ -10,6 +10,7 @@ import sys
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
+from sklearn.utils.class_weight import compute_class_weight
 
 # Seed for reproducibility
 seed = 42
@@ -30,8 +31,8 @@ else:
 folder = f"pyTorch/StockTrader/{symbol}/{folder_name}/"
 
 # Load features and model
-features_path = folder + "checkpoint_features.json"
-scaler_path = folder + "checkpoint_scaler.pkl"
+features_path = folder + "features.json"
+scaler_path = folder + "scaler.pkl"
 scaler = joblib.load(scaler_path)
 with open(features_path, "r") as f:
     features = json.load(f)
@@ -51,12 +52,12 @@ class StockLSTM(nn.Module):
 
 # Instantiate and load model
 model = StockLSTM(input_size=len(features))
-model.load_state_dict(torch.load(folder + "checkpoint_model.pt"))
+model.load_state_dict(torch.load(folder + "final_model.pt"))
 model.eval()
 
 # Download data
 print(f"Evaluating {symbol} model...")
-data = yf.download(symbol, period="1y", interval="1h", auto_adjust=False)
+data = yf.download(symbol, period="1y", auto_adjust=False)
 if data.empty:
     print("No data available.")
     sys.exit()
@@ -85,7 +86,10 @@ X_test_tensor = torch.tensor(X_test).unsqueeze(1)
 Y_test_tensor = torch.tensor(Y_test)
 
 # Evaluate
-criterion = nn.CrossEntropyLoss()
+weights = compute_class_weight(class_weight='balanced', classes=np.array([0,1]), y=Y_test)
+class_weights = torch.tensor(weights, dtype=torch.float)
+criterion = nn.CrossEntropyLoss(weight=class_weights)
+
 with torch.no_grad():
     outputs = model(X_test_tensor)
     loss = criterion(outputs, Y_test_tensor).item()
@@ -105,7 +109,74 @@ with torch.no_grad():
     flipped_loss = criterion(outputs, flipped_targets).item()
 
 
-print(f"Evaluation Results for {symbol}:")
+print(f"Evaluation Results for {symbol} final model:")
+print(f"   Original Loss:     {original_loss:.4f}")
+print(f"   Original Accuracy: {original_acc:.2%}")
+print()
+print(f"   Flipped Loss:      {flipped_loss:.4f}")
+print(f"   Flipped Accuracy:  {flipped_acc:.2%}")
+
+interpretation = ""
+
+if abs(original_acc - 0.5) < 0.03 and abs(flipped_acc - 0.5) < 0.03:
+    interpretation = "Model performs like random guessing."
+elif flipped_acc > original_acc and flipped_acc > 0.53:
+    interpretation = "Model may be learning the **opposite** signal."
+elif original_acc > flipped_acc and original_acc > 0.53:
+    interpretation = "Model shows useful predictive skill."
+elif original_acc > flipped_acc:
+    interpretation = "Original slightly better, but weak overall."
+elif flipped_acc > original_acc:
+    interpretation = "Flipped slightly better, but weak overall."
+else:
+    interpretation = "Unexpected pattern — check labels or model."
+
+print(f"\nInterpretation: {interpretation}")
+
+print("="*50)
+# Load features and model
+features_path = folder + "checkpoint_features.json"
+scaler_path = folder + "checkpoint_scaler.pkl"
+scaler = joblib.load(scaler_path)
+with open(features_path, "r") as f:
+    features = json.load(f)
+model.load_state_dict(torch.load(folder + "checkpoint_model.pt"))
+model.eval()
+X = data[features].values.astype(np.float32)
+Y = data['target'].values.astype(np.int64)
+X = scaler.transform(X)
+
+X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, shuffle=False)
+
+# Convert to tensors
+X_test_tensor = torch.tensor(X_test).unsqueeze(1)
+Y_test_tensor = torch.tensor(Y_test)
+
+# Evaluate
+weights = compute_class_weight(class_weight='balanced', classes=np.array([0,1]), y=Y_test)
+class_weights = torch.tensor(weights, dtype=torch.float)
+criterion = nn.CrossEntropyLoss(weight=class_weights)
+
+with torch.no_grad():
+    outputs = model(X_test_tensor)
+    loss = criterion(outputs, Y_test_tensor).item()
+    predicted = torch.argmax(outputs, dim=1)
+    flipped = 1 - predicted
+
+    # Accuracy
+    original_acc = (predicted == Y_test_tensor).float().mean().item()
+    flipped_acc = (flipped == Y_test_tensor).float().mean().item()
+
+    # Loss
+    criterion = nn.CrossEntropyLoss()
+    original_loss = criterion(outputs, Y_test_tensor).item()
+
+    # For flipped loss, flip targets instead (not predictions)
+    flipped_targets = 1 - Y_test_tensor
+    flipped_loss = criterion(outputs, flipped_targets).item()
+
+
+print(f"Evaluation Results for {symbol} checkpoint model:")
 print(f"   Original Loss:     {original_loss:.4f}")
 print(f"   Original Accuracy: {original_acc:.2%}")
 print()

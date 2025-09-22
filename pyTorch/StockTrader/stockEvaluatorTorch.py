@@ -38,20 +38,26 @@ with open(features_path, "r") as f:
     features = json.load(f)
 
 # Define model
-class StockLSTM(nn.Module):
-    def __init__(self, input_size, hidden_size=32, num_layers=2, dropout=0.5):
+class StockTransformer(nn.Module):
+    def __init__(self, input_size, d_model=64, nhead=4, num_layers=3, dropout=0.1):
         super().__init__()
-        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True, dropout=dropout)
+        self.embedding = nn.Linear(input_size, d_model)
+        encoder_layer = nn.TransformerEncoderLayer(d_model=d_model, nhead=nhead, dropout=dropout, batch_first=True)
+        self.transformer_encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
         self.dropout = nn.Dropout(dropout)
-        self.fc = nn.Linear(hidden_size, 2)
+        self.fc = nn.Linear(d_model, 2)
+        self.position_embeddings = nn.Parameter(torch.randn(1, 1, d_model))
 
     def forward(self, x):
-        output, _ = self.lstm(x)
-        out = self.dropout(output[:, -1, :])
-        return self.fc(out)
+        if x.dim() == 2:
+            x = x.unsqueeze(1)
+        x = self.embedding(x) + self.position_embeddings
+        x = self.transformer_encoder(x)
+        x = self.dropout(x[:, -1, :])
+        return self.fc(x)
 
 # Instantiate and load model
-model = StockLSTM(input_size=len(features))
+model = StockTransformer(input_size=len(features))
 model.load_state_dict(torch.load(folder + "final_model.pt"))
 model.eval()
 

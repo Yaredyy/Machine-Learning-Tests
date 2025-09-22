@@ -108,7 +108,24 @@ class StockMLP(nn.Module):
 🔹 B. LSTM (Your current model)
 Works for both single-row and sequence.
 
-find it in commit lol
+def __init__(self, input_size, d_model=64, nhead=4, num_layers=3, dropout=0.1):
+        super().__init__()
+        self.embedding = nn.Linear(input_size, d_model)
+        encoder_layer = nn.TransformerEncoderLayer(d_model=d_model, nhead=nhead, dropout=dropout, batch_first=True)
+        self.transformer_encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
+        self.dropout = nn.Dropout(dropout)
+        self.fc = nn.Linear(d_model, 2)
+        self.position_embeddings = nn.Parameter(torch.randn(1, 1, d_model))
+
+    def forward(self, x):
+        if x.dim() == 2:
+            x = x.unsqueeze(1)  # [B, 1, F]
+
+        # Positional embedding (can be learned or sinusoidal)
+        x = self.embedding(x) + self.position_embeddings
+        x = self.transformer_encoder(x)
+        x = self.dropout(x[:, -1, :])  # last time step
+        return self.fc(x)
 
 🔹 C. Transformer
 

@@ -4,8 +4,8 @@ import os
 
 # List of tickers to process
 tickers = [
-    "BTC-USD", "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA",
-   "ETH-USD", "SPY", "GC=F"
+    "AAPL", "AMZN","BTC-USD", "ETH-USD",
+    "GC=F", "GOOGL", "MSFT","SPY", "TSLA"
 ]
 
 # Path to your Python executable inside env

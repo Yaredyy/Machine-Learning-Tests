@@ -16,8 +16,8 @@ if not os.path.exists(python_path):
 
 # List of tickers
 tickers = [
-    "BTC-USD", "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA",
-    "ETH-USD", "SPY", "GC=F"
+    "AAPL", "AMZN","BTC-USD", "ETH-USD",
+    "GC=F", "GOOGL", "MSFT","SPY", "TSLA"
 ]
 
 folder_name = input("Enter Model Folder: ")

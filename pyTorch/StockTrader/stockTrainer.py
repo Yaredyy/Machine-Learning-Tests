@@ -142,7 +142,7 @@ def formatNewData():
     else:
         weights = compute_class_weight(class_weight='balanced', classes=np.array([0,1]), y=Y_test)
         class_weights = torch.tensor(weights, dtype=torch.float).to(device)
-    criterion = nn.CrossEntropyLoss(weight=class_weights)
+    criterion = FocalLoss(weight=class_weights)
     if torch.cuda.is_available():
         train_loader = DataLoader(TensorDataset(X_train_tensor, Y_train_tensor), batch_size=256, shuffle=True,pin_memory=True)
     else:
@@ -232,7 +232,20 @@ if len(unique) < 2:
 else:
     weights = compute_class_weight(class_weight='balanced', classes=np.array([0,1]), y=Y_test)
     class_weights = torch.tensor(weights, dtype=torch.float).to(device)
-criterion = nn.CrossEntropyLoss(weight=class_weights)
+
+class FocalLoss(nn.Module):
+    def __init__(self, gamma=2.0, weight=None):
+        super().__init__()
+        self.gamma = gamma
+        self.ce = nn.CrossEntropyLoss(weight=weight)
+
+    def forward(self, input, target):
+        logp = self.ce(input, target)
+        p = torch.exp(-logp)
+        loss = (1 - p) ** self.gamma * logp
+        return loss.mean()
+    
+criterion = FocalLoss(weight=class_weights)
 optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-4)
 scheduler = ReduceLROnPlateau(optimizer, mode='max', factor=0.5, threshold=0.01, patience=50)
 

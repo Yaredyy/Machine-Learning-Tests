@@ -50,3 +50,156 @@ and awaits feedback or the acceptment
     **Deep Learning:
     allowing a model to train itself and perform tasks
     Alpha googlenatural speech recognition
+
+
+
+🏗️ 2. Architecture Options (From Basic to Advanced)
+Model	Strength	Seq Compatible	Notes
+MLP (Feedforward)	Simple, fast	✅ Yes	Baseline model
+LSTM	Good temporal memory	✅ Yes	Slower, older
+CNN + LSTM	Local patterns + memory	✅ Yes	More expressive
+Transformer	Captures long dependencies	✅ Yes	Powerful, flexible
+TCN (Temporal Conv Net)	Faster than LSTM, better sequence learning	✅ Yes	Great with sequences
+MLP-Mixer / TabTransformer	No sequence needed	❌ No	For tabular (non-time) data
+Gradient Boosting (e.g., XGBoost)	Non-NN, great for tabular	❌ No	Can outperform NN sometimes
+
+Since you don't always want to use windowing, you need models that work:
+
+✅ With single-row input (like today’s features)
+
+✅ With optional sequence input (windowing)
+
+I’ll show you how to support both, for every model.
+
+🧰 3. Universal Model Input Adapter
+
+We’ll treat the input like this inside the model:
+
+if x.dim() == 2:  # [B, F]
+    x = x.unsqueeze(1)  # → [B, 1, F]
+
+
+That way your model supports both:
+
+No sequence: [B, F] becomes [B, 1, F]
+
+Sequence: Already [B, T, F]
+
+✅ 4. Recommended Models (with Code)
+🔹 A. Baseline MLP (Fastest, non-sequential)
+class StockMLP(nn.Module):
+    def __init__(self, input_size, hidden_sizes=[64, 32], dropout=0.2):
+        super().__init__()
+        layers = []
+        prev_size = input_size
+        for hs in hidden_sizes:
+            layers.append(nn.Linear(prev_size, hs))
+            layers.append(nn.ReLU())
+            layers.append(nn.Dropout(dropout))
+            prev_size = hs
+        layers.append(nn.Linear(prev_size, 2))  # Output layer
+        self.net = nn.Sequential(*layers)
+
+    def forward(self, x):
+        if x.dim() == 3:
+            x = x[:, -1, :]  # Use last timestep if sequence
+        return self.net(x)
+
+🔹 B. LSTM (Your current model)
+Works for both single-row and sequence.
+
+class StockTransformer(nn.Module):
+    def __init__(self, input_size, d_model=64, nhead=4, num_layers=3, dropout=0.1):
+        super().__init__()
+        self.embedding = nn.Linear(input_size, d_model)
+        encoder_layer = nn.TransformerEncoderLayer(d_model=d_model, nhead=nhead, dropout=dropout, batch_first=True)
+        self.transformer_encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
+        self.dropout = nn.Dropout(dropout)
+        self.fc = nn.Linear(d_model, 2)
+        self.position_embeddings = nn.Parameter(torch.randn(1, 1, d_model))
+
+    def forward(self, x):
+        if x.dim() == 2:
+            x = x.unsqueeze(1)
+        x = self.embedding(x) + self.position_embeddings
+        x = self.transformer_encoder(x)
+        x = self.dropout(x[:, -1, :])
+        return self.fc(x)
+
+🔹 C. Transformer
+
+Supports both input types (already adapted earlier):
+
+class StockTransformer(nn.Module):
+    def __init__(self, input_size, d_model=64, nhead=4, num_layers=3, dropout=0.1):
+        super().__init__()
+        self.embedding = nn.Linear(input_size, d_model)
+        encoder_layer = nn.TransformerEncoderLayer(d_model=d_model, nhead=nhead, dropout=dropout, batch_first=True)
+        self.transformer_encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
+        self.dropout = nn.Dropout(dropout)
+        self.fc = nn.Linear(d_model, 2)
+        self.position_embeddings = nn.Parameter(torch.randn(1, 1, d_model))
+
+    def forward(self, x):
+        if x.dim() == 2:
+            x = x.unsqueeze(1)
+        x = self.embedding(x) + self.position_embeddings
+        x = self.transformer_encoder(x)
+        x = self.dropout(x[:, -1, :])
+        return self.fc(x)
+
+🔹 D. TCN (Temporal Convolutional Network)
+class Chomp1d(nn.Module):
+    def __init__(self, chomp_size):
+        super().__init__()
+        self.chomp_size = chomp_size
+
+    def forward(self, x):
+        return x[:, :, :-self.chomp_size].contiguous()
+
+class TemporalBlock(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size, stride, dilation, padding, dropout):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Conv1d(in_channels, out_channels, kernel_size, stride=stride,
+                      padding=padding, dilation=dilation),
+            Chomp1d(padding),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Conv1d(out_channels, out_channels, kernel_size, stride=stride,
+                      padding=padding, dilation=dilation),
+            Chomp1d(padding),
+            nn.ReLU(),
+            nn.Dropout(dropout)
+        )
+        self.downsample = nn.Conv1d(in_channels, out_channels, 1) if in_channels != out_channels else None
+        self.relu = nn.ReLU()
+
+    def forward(self, x):
+        out = self.net(x)
+        res = x if self.downsample is None else self.downsample(x)
+        return self.relu(out + res)
+
+class StockTCN(nn.Module):
+    def __init__(self, input_size, num_channels=[64, 64], kernel_size=3, dropout=0.2):
+        super().__init__()
+        layers = []
+        num_levels = len(num_channels)
+        for i in range(num_levels):
+            dilation = 2 ** i
+            in_ch = input_size if i == 0 else num_channels[i-1]
+            out_ch = num_channels[i]
+            layers.append(
+                TemporalBlock(in_ch, out_ch, kernel_size, stride=1, dilation=dilation,
+                              padding=(kernel_size-1) * dilation, dropout=dropout)
+            )
+        self.tcn = nn.Sequential(*layers)
+        self.fc = nn.Linear(num_channels[-1], 2)
+
+    def forward(self, x):
+        if x.dim() == 2:
+            x = x.unsqueeze(1)  # [B, 1, F]
+        x = x.permute(0, 2, 1)  # [B, F, T]
+        x = self.tcn(x)
+        x = x[:, :, -1]
+        return self.fc(x)

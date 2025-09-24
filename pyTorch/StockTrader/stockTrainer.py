@@ -91,7 +91,7 @@ def create_sequences(X, Y, window_size=5):
 # ────────────────────────────────────────────────────────────
 # Transformer Model
 class StockTransformer(nn.Module):
-    def __init__(self, input_size, d_model=32, nhead=2, num_layers=1, dropout=0.1):
+    def __init__(self, input_size, d_model=32, nhead=2, num_layers=1, dropout=0.3):
         super().__init__()
         self.embedding = nn.Linear(input_size, d_model)
         encoder_layer = nn.TransformerEncoderLayer(d_model=d_model, nhead=nhead, dropout=dropout, batch_first=True)

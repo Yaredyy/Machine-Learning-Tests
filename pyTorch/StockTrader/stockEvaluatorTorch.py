@@ -39,7 +39,7 @@ with open(features_path, "r") as f:
 
 # Define model
 class StockTransformer(nn.Module):
-    def __init__(self, input_size, d_model=64, nhead=4, num_layers=3, dropout=0.1):
+    def __init__(self, input_size, d_model=32, nhead=2, num_layers=1, dropout=0.1):
         super().__init__()
         self.embedding = nn.Linear(input_size, d_model)
         encoder_layer = nn.TransformerEncoderLayer(d_model=d_model, nhead=nhead, dropout=dropout, batch_first=True)
@@ -63,24 +63,37 @@ model.eval()
 
 # Download data
 print(f"Evaluating {symbol} model...")
-data = yf.download(symbol, period="1y", auto_adjust=False)
+data = yf.download(symbol, period="max", auto_adjust=False)
 if data.empty:
     print("No data available.")
     sys.exit()
 
 # Feature engineering
-close = data['Close'].squeeze()
+close = data['Close'].astype(float).squeeze()
+volume = data['Volume'].astype(float).squeeze()
+
 data['rsi'] = ta.momentum.RSIIndicator(close).rsi()
 data['macd'] = ta.trend.MACD(close).macd()
-data['sma_20'] = data['Close'].rolling(20).mean()
-data['sma_50'] = data['Close'].rolling(50).mean()
-data['price_change'] = data['Close'].pct_change(1)
-data['volatility'] = data['Close'].rolling(10).std()
-data['ema_12'] = data['Close'].ewm(span=12).mean()
-data['ema_26'] = data['Close'].ewm(span=26).mean()
-data['target'] = (data['Close'].shift(-3) > data['Close']).astype(int)
+data['sma_20'] = close.rolling(20).mean()
+data['sma_50'] = close.rolling(50).mean()
+data['price_change'] = close.pct_change(1)
+data['volatility'] = close.rolling(10).std()
+data['ema_12'] = close.ewm(span=12).mean()
+data['ema_26'] = close.ewm(span=26).mean()
+data['return_1'] = close.pct_change(1)
+data['return_5'] = close.pct_change(5)
+data['rolling_max'] = close.rolling(5).max()
+data['rolling_min'] = close.rolling(5).min()
+data['momentum'] = close - close.shift(5)
+data['volume_change'] = volume.pct_change(1)
+data['Volume'] = volume
+data['price_position'] = (close - data['rolling_min']) / (data['rolling_max'] - data['rolling_min'])
+
+# Drop NaNs
+data.replace([np.inf, -np.inf], np.nan, inplace=True)
 data.dropna(inplace=True)
 
+data['target'] = (data['Close'].shift(-3) > data['Close']).astype(int)
 X = data[features].values.astype(np.float32)
 Y = data['target'].values.astype(np.int64)
 X = scaler.transform(X)

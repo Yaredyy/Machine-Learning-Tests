@@ -183,7 +183,7 @@ def load_and_format(symbol):
 
     X = df[features].values.astype(np.float32)
     Y = df['target'].values.astype(np.int64)
-    X, Y = create_sequences(X, Y, window_size=5)
+    X, Y = create_sequences(X, Y, window_size=20)
 
     # Split
     X_train_full, X_test, Y_train_full, Y_test = train_test_split(X, Y, test_size=0.3, shuffle=False)
@@ -250,7 +250,7 @@ checkpoint_scaler_path = folder + "checkpoint_scaler.pkl"
 # ────────────────────────────────────────────────────────────
 # Training loop
 epochs = 100000
-patien = 50010
+patien = 510
 best_metric = 0
 counter = 0
 temp = []

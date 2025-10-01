@@ -32,7 +32,7 @@ torch.backends.cudnn.benchmark = False
 
 # ────────────────────────────────────────────────────────────
 # Device setup
-print("────────────────────────────────────────────────────────────")
+print("-" * 60)
 print("CUDA Available:", torch.cuda.is_available())
 print("CUDA version (PyTorch built with):", torch.version.cuda)
 
@@ -45,7 +45,7 @@ elif torch.backends.mps.is_available():
 else:
     print("Using CPU.")
     device = torch.device("cpu")
-print("────────────────────────────────────────────────────────────\n")
+print(("-" * 60)+"\n")
 
 # ────────────────────────────────────────────────────────────
 # Signal handling
@@ -141,7 +141,7 @@ def new_end(): return datetime(year - (wind * c), 1, 1)
 # ────────────────────────────────────────────────────────────
 # Preprocess data
 def load_and_format(symbol):
-    print(f"Downloading {symbol} data: {new_start().date()} → {new_end().date()}")
+    print(f"Downloading {symbol} data: {new_start().date()} to {new_end().date()}")
     df = yf.download(symbol, period="max", auto_adjust=False)
 
     if(df.empty):
@@ -384,6 +384,6 @@ with torch.no_grad():
     best_acc = (test_classes == Y_test_tensor).float().mean().item()
 
 print(f"\n Final Val Accuracy: {final_acc:.4f} | Best Val Accuracy: {best_acc:.4f} | Best_metic: {best_metric:.4f}")
-print("────────────────────────────────────────────────────────────")
+print("-" * 60)
 print("Training loop completed, training loop exited "+ ("by user or error." if stop_training else "normally.")+" Model saved successfully.")
-print("────────────────────────────────────────────────────────────")
+print("-" * 60)

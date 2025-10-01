@@ -20,6 +20,7 @@ if not os.path.exists(python_path):
     sys.exit(0)
 
 folder_name = input("Enter Model Folder: ")  # same folder for all or customize if you want
+print(f"python path:{python_path}")
 
 for symbol in tickers:
     print("\n" + "="*50)

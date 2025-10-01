@@ -128,4 +128,4 @@ else:
     print(" HOLD — No Clear Signal")
 
 # Info
-print(f"\n Model uses {len(features)} features and window_size={window_size}.")
+print(f"\n Model uses {len(features)} features and window_size={window_size}.",flush=True)

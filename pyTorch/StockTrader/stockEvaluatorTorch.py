@@ -218,4 +218,4 @@ else:
     interpretation = "Unexpected pattern — check labels or model."
 
 print(f"\nInterpretation: {interpretation}")
-print("=" * 50 + "\n")
+print("=" * 50 + "\n",flush=True)

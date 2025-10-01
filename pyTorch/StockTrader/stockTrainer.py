@@ -385,5 +385,5 @@ with torch.no_grad():
 
 print(f"\n Final Val Accuracy: {final_acc:.4f} | Best Val Accuracy: {best_acc:.4f} | Best_metic: {best_metric:.4f}")
 print("-" * 60)
-print("Training loop completed, training loop exited "+ ("by user or error." if stop_training else "normally.")+" Model saved successfully.")
+print("Training loop completed, training loop exited "+ ("by user or error." if stop_training else "normally.")+" Model saved successfully.",flush=True)
 print("-" * 60)

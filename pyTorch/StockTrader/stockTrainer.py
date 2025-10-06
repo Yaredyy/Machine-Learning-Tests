@@ -249,8 +249,8 @@ checkpoint_scaler_path = folder + "checkpoint_scaler.pkl"
 
 # ────────────────────────────────────────────────────────────
 # Training loop
-epochs = 100000
-patien = 510
+epochs = 10000
+patien = 8010
 best_metric = 0
 counter = 0
 temp = []
